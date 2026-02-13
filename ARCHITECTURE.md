@@ -12,21 +12,27 @@ Anchor-Kit is designed to be the "Rails" for Stellar Anchors—opinionated but f
 ## Module Breakdown
 
 ### `src/core`
+
 The heart of the SDK.
--   `createAnchor()`: The factory function that initializes the server.
--   **Auth**: SEP-10 implementation details.
--   **Database**: Abstract adapters (Prisma, Postgres) to manage transaction state.
+
+- `createAnchor()`: The factory function that initializes the server.
+- **Auth**: SEP-10 implementation details.
+- **Database**: Abstract adapters (Prisma, Postgres) to manage transaction state.
 
 ### `src/plugins`
+
 Modular implementations of SEPs and integrations.
--   `sep24/`: Hosted Deposit/Withdrawal flow.
--   `sep6/`: API-based Transfer flow (Future).
--   `sep31/`: Cross-border payments (Future).
+
+- `sep24/`: Hosted Deposit/Withdrawal flow.
+- `sep6/`: API-based Transfer flow (Future).
+- `sep31/`: Cross-border payments (Future).
 
 ### `src/services`
+
 Shared internal services.
--   `StellarService`: Wrappers around Horizon API.
--   `QueueService`: Job queues for processing blockchain transactions asynchronously.
+
+- `StellarService`: Wrappers around Horizon API.
+- `QueueService`: Job queues for processing blockchain transactions asynchronously.
 
 ## Folder Structure
 

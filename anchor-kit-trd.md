@@ -1,6 +1,6 @@
 # **Architecting the Financial Bridge: A Technical Specification for the Anchor-in-a-Box SDK**
 
-## 
+##
 
 ## **Executive Summary**
 
@@ -22,7 +22,7 @@ The architectural core of the SDK is the factory function, createAnchor. This fu
 
 In the spirit of Better-Auth 1, the configuration object passed to createAnchor is strictly typed. This ensures that essential configuration parameters—such as the Stellar Network passphrase or the specific database adapter—are validated at compile time. This preemptive validation is critical in financial software where runtime configuration errors can lead to lost funds or security vulnerabilities.
 
-The configuration interface is designed to be declarative. The developer describes *what* the anchor should do (e.g., "support SEP-24 for USDC on Testnet"), and the SDK handles the *how* (generating the /info endpoint, setting up the event listeners, and configuring the TOML file).
+The configuration interface is designed to be declarative. The developer describes _what_ the anchor should do (e.g., "support SEP-24 for USDC on Testnet"), and the SDK handles the _how_ (generating the /info endpoint, setting up the event listeners, and configuring the TOML file).
 
 TypeScript
 
@@ -33,44 +33,45 @@ import { sep24 } from "@stellar/anchor-box/plugins/sep24";
 import { flutterwave } from "@stellar/anchor-box/plugins/rails/flutterwave";
 
 export const anchor \= createAnchor({  
-    network: "testnet", // 'public' | 'testnet' | 'futurenet'  
-    debug: process.env.NODE\_ENV \=== "development",  
-      
-    // Database Adapter: Decouples storage logic from protocol logic \[2\]  
-    database: postgresAdapter({  
-        url: process.env.DATABASE\_URL,  
-        schema: "anchor\_schema"  
+ network: "testnet", // 'public' | 'testnet' | 'futurenet'  
+ debug: process.env.NODE_ENV \=== "development",
+
+    // Database Adapter: Decouples storage logic from protocol logic \[2\]
+    database: postgresAdapter({
+        url: process.env.DATABASE\_URL,
+        schema: "anchor\_schema"
     }),
 
-    // Secret Management: Centralized vault for high-entropy keys  
-    secrets: {  
-        sep10SigningKey: process.env.SEP10\_SIGNING\_KEY,  
-        interactiveJwtSecret: process.env.JWT\_SECRET,  
-        distributionAccountSecret: process.env.DISTRIBUTION\_SECRET  
+    // Secret Management: Centralized vault for high-entropy keys
+    secrets: {
+        sep10SigningKey: process.env.SEP10\_SIGNING\_KEY,
+        interactiveJwtSecret: process.env.JWT\_SECRET,
+        distributionAccountSecret: process.env.DISTRIBUTION\_SECRET
     },
 
-    // Plugin System: Modular capability injection   
-    plugins:,  
-            interactiveDomain: "https://anchor.finance/portal",  
-            kycLevel: "strict",  
-            // Hook injection for custom business logic  
-            hooks: {  
-                onInteractive: async (ctx) \=\> {  
-                    // Custom pre-processing logic  
-                }  
-            }  
+    // Plugin System: Modular capability injection
+    plugins:,
+            interactiveDomain: "https://anchor.finance/portal",
+            kycLevel: "strict",
+            // Hook injection for custom business logic
+            hooks: {
+                onInteractive: async (ctx) \=\> {
+                    // Custom pre-processing logic
+                }
+            }
         }),
 
-        // Rail Layer: African Fiat Aggregators \[5\]  
-        flutterwave({  
-            secretKey: process.env.FLW\_SECRET\_KEY,  
-            webhookSecret: process.env.FLW\_WEBHOOK\_HASH,  
-            mapping: {  
-                "NGNC": "NGN", // Map Stellar Asset to Fiat Currency  
-                "USDC": "USD"  
-            }  
-        })  
-    \]  
+        // Rail Layer: African Fiat Aggregators \[5\]
+        flutterwave({
+            secretKey: process.env.FLW\_SECRET\_KEY,
+            webhookSecret: process.env.FLW\_WEBHOOK\_HASH,
+            mapping: {
+                "NGNC": "NGN", // Map Stellar Asset to Fiat Currency
+                "USDC": "USD"
+            }
+        })
+    \]
+
 });
 
 ### **1.2 The Plugin System Architecture**
@@ -81,8 +82,8 @@ The versatility of the SDK lies in its extensibility. The core SDK manages the f
 
 Plugins in Anchor-in-a-Box are capable of modifying the server's behavior in three distinct ways:
 
-1. **Route Injection**: Plugins can register new API routes. For instance, the sep24 plugin automatically mounts GET /info, POST /transactions/deposit/interactive, and POST /transactions/withdraw/interactive.3  
-2. **Schema Extension**: Plugins can request specific database tables. The sep24 plugin requires a Transaction table with specific status enums, while a sep12 (KYC) plugin might require a Customer table. The SDK utilizes Prisma's extension capabilities to merge these requirements.  
+1. **Route Injection**: Plugins can register new API routes. For instance, the sep24 plugin automatically mounts GET /info, POST /transactions/deposit/interactive, and POST /transactions/withdraw/interactive.3
+2. **Schema Extension**: Plugins can request specific database tables. The sep24 plugin requires a Transaction table with specific status enums, while a sep12 (KYC) plugin might require a Customer table. The SDK utilizes Prisma's extension capabilities to merge these requirements.
 3. **Lifecycle Hooks**: Plugins can register listeners for core events. A "Notification Plugin" could listen for onTransactionStatusChange to send SMS alerts via Twilio when a deposit completes.
 
 The plugin interface is defined to ensure rigorous type safety across the application:
@@ -90,17 +91,17 @@ The plugin interface is defined to ensure rigorous type safety across the applic
 TypeScript
 
 export interface AnchorPlugin {  
-    id: string;  
-    // Inject API routes into the main server instance  
-    routes?: RouteDefinition;  
-    // Extend the database schema context  
-    schema?: SchemaDefinition;  
-    // Hook into the transaction lifecycle  
-    hooks?: {  
-        onDepositRequest?: (ctx: Context) \=\> Promise\<void\>;  
-        onWithdrawalRequest?: (ctx: Context) \=\> Promise\<void\>;  
-        onSep10Challenge?: (tx: Transaction) \=\> Promise\<Transaction\>;  
-    };  
+ id: string;  
+ // Inject API routes into the main server instance  
+ routes?: RouteDefinition;  
+ // Extend the database schema context  
+ schema?: SchemaDefinition;  
+ // Hook into the transaction lifecycle  
+ hooks?: {  
+ onDepositRequest?: (ctx: Context) \=\> Promise\<void\>;  
+ onWithdrawalRequest?: (ctx: Context) \=\> Promise\<void\>;  
+ onSep10Challenge?: (tx: Transaction) \=\> Promise\<Transaction\>;  
+ };  
 }
 
 ### **1.3 Client-Side Hooks and RPC Generation**
@@ -125,18 +126,18 @@ SEP-10 defines the standard for proving ownership of a Stellar account using a c
 
 The SDK implements the server-side logic of SEP-10 completely within its internal auth module. When a client initiates authentication:
 
-1. **Transaction Construction**: The SDK builds a Stellar transaction. As per security best practices, the sequence number is set to 0 to prevent the transaction from ever being valid for submission to the ledger, strictly limiting its use to authentication.7  
-2. **Nonce Management**: A 64-byte random nonce is included via a manageData operation. This prevents replay attacks where a malicious actor might intercept a signed challenge and attempt to reuse it.  
-3. **Time Bounds**: The SDK enforces strict time bounds (defaulting to 300 seconds) to ensure the challenge is fresh.8  
+1. **Transaction Construction**: The SDK builds a Stellar transaction. As per security best practices, the sequence number is set to 0 to prevent the transaction from ever being valid for submission to the ledger, strictly limiting its use to authentication.7
+2. **Nonce Management**: A 64-byte random nonce is included via a manageData operation. This prevents replay attacks where a malicious actor might intercept a signed challenge and attempt to reuse it.
+3. **Time Bounds**: The SDK enforces strict time bounds (defaulting to 300 seconds) to ensure the challenge is fresh.8
 4. **Server Signing**: The transaction is signed by the Anchor’s server signing key. This allows the client to verify that the challenge indeed originated from the trusted anchor.6
 
 #### **Signature Verification and JWT Issuance**
 
 Upon receiving the signed challenge transaction back from the client, the SDK performs rigorous validation:
 
-1. **Signature Extraction**: It parses the XDR envelope and extracts all signatures.  
-2. **Threshold Validation**: It queries the Stellar Horizon API to fetch the signers of the client account. It calculates the total weight of the signatures present on the transaction. The SDK verifies that this weight meets the threshold required for the account (usually the medium threshold).7 This is crucial for supporting multi-signature wallets (e.g., DAOs or corporate treasuries).  
-3. **Client Domain Verification**: If client\_attribution is enabled, the SDK verifies that the transaction also bears the signature of the claiming client domain (e.g., wallet.app), preventing man-in-the-middle attacks by rogue wallets.9  
+1. **Signature Extraction**: It parses the XDR envelope and extracts all signatures.
+2. **Threshold Validation**: It queries the Stellar Horizon API to fetch the signers of the client account. It calculates the total weight of the signatures present on the transaction. The SDK verifies that this weight meets the threshold required for the account (usually the medium threshold).7 This is crucial for supporting multi-signature wallets (e.g., DAOs or corporate treasuries).
+3. **Client Domain Verification**: If client_attribution is enabled, the SDK verifies that the transaction also bears the signature of the claiming client domain (e.g., wallet.app), preventing man-in-the-middle attacks by rogue wallets.9
 4. **JWT Minting**: If all checks pass, the SDK issues a JWT signed with the interactiveJwtSecret. This token contains the sub (Subject: User's Public Key) and jti (Transaction Hash) and is required for all subsequent interactions.10
 
 ### **2.2 SEP-24: Hosted Deposit and Withdrawal Logic**
@@ -147,22 +148,22 @@ SEP-24 (Hosted Deposits and Withdrawals) acknowledges that many anchors require 
 
 The SDK handles the handshake logic for SEP-24:
 
-1. **Endpoint implementation**: It implements POST /transactions/deposit/interactive.  
-2. **Request Validation**: It validates that the asset code (e.g., USDC) is supported and that the request is authenticated via the SEP-10 JWT.  
-3. **Session Initialization**: It creates a database entry for the transaction with status incomplete.  
+1. **Endpoint implementation**: It implements POST /transactions/deposit/interactive.
+2. **Request Validation**: It validates that the asset code (e.g., USDC) is supported and that the request is authenticated via the SEP-10 JWT.
+3. **Session Initialization**: It creates a database entry for the transaction with status incomplete.
 4. **URL Construction**: It generates a unique, one-time URL (e.g., https://api.anchor.box/sep24/interactive?transaction\_id=xyz\&token=jwt). The JWT passed in the URL is distinct from the SEP-10 token; it is a short-lived token specifically for accessing the interactive form.3
 
 #### **The Transaction State Machine**
 
 Crucially, the SDK enforces a unidirectional state machine for SEP-24 transactions to prevent race conditions and fund loss. The states are strictly mapped to the SEP-24 specification 11:
 
-* **incomplete**: The initial state. The user is currently interacting with the web page, uploading ID documents, or entering bank details.  
-* **pending\_anchor**: The user has finished, and the anchor (SDK) is performing background checks (e.g., validating a Nigerian BVN via an API).  
-* **pending\_user\_transfer\_start**: The anchor is ready. The user is instructed to send the fiat currency (e.g., "Send 5000 NGN to Bank X").  
-* **pending\_external**: The anchor has received the fiat payment but has not yet settled the crypto.  
-* **completed**: The Stellar asset has been successfully sent to the user's wallet.
+- **incomplete**: The initial state. The user is currently interacting with the web page, uploading ID documents, or entering bank details.
+- **pending_anchor**: The user has finished, and the anchor (SDK) is performing background checks (e.g., validating a Nigerian BVN via an API).
+- **pending_user_transfer_start**: The anchor is ready. The user is instructed to send the fiat currency (e.g., "Send 5000 NGN to Bank X").
+- **pending_external**: The anchor has received the fiat payment but has not yet settled the crypto.
+- **completed**: The Stellar asset has been successfully sent to the user's wallet.
 
-The SDK exposes hooks for developers to intervene at these state transitions. For example, a developer might attach a listener to pending\_user\_transfer\_start to automatically generate a virtual bank account via Paystack and display it to the user.
+The SDK exposes hooks for developers to intervene at these state transitions. For example, a developer might attach a listener to pending_user_transfer_start to automatically generate a virtual bank account via Paystack and display it to the user.
 
 ## ---
 
@@ -178,32 +179,32 @@ Fiat aggregators like Flutterwave and Paystack rely heavily on Webhooks to notif
 
 The SDK defines a standard RailEvent interface. It employs adapter patterns to map incoming JSON from different providers to this interface.
 
-| Data Point | Flutterwave Source | Paystack Source | Normalized SDK Internal Field |
-| :---- | :---- | :---- | :---- |
-| **Transaction Ref** | data.tx\_ref | data.reference | rail\_reference |
-| **Fiat Amount** | data.amount | data.amount (Note: Paystack sends kobo, requiring division by 100\) | fiat\_amount |
-| **Currency** | data.currency | data.currency | fiat\_currency |
-| **Status** | data.status | data.status | rail\_status |
-| **Payer Email** | data.customer.email | data.customer.email | customer\_identifier |
-| **Event Type** | charge.completed | charge.success | deposit\_success |
+| Data Point          | Flutterwave Source  | Paystack Source                                                     | Normalized SDK Internal Field |
+| :------------------ | :------------------ | :------------------------------------------------------------------ | :---------------------------- |
+| **Transaction Ref** | data.tx_ref         | data.reference                                                      | rail_reference                |
+| **Fiat Amount**     | data.amount         | data.amount (Note: Paystack sends kobo, requiring division by 100\) | fiat_amount                   |
+| **Currency**        | data.currency       | data.currency                                                       | fiat_currency                 |
+| **Status**          | data.status         | data.status                                                         | rail_status                   |
+| **Payer Email**     | data.customer.email | data.customer.email                                                 | customer_identifier           |
+| **Event Type**      | charge.completed    | charge.success                                                      | deposit_success               |
 
 #### **Signature Verification Security**
 
 Before processing any webhook, the SDK verifies the cryptographic signature to ensure the request originated from the payment provider.
 
-* **Paystack**: The SDK computes an HMAC-SHA512 hash of the request body using the RAIL\_SECRET\_KEY and compares it to the x-paystack-signature header.13  
-* **Flutterwave**: Similarly, it verifies the verif-hash header.  
-* **Replay Protection**: The SDK checks the rail\_reference against the database. If a transaction with this reference has already been processed (status completed), the webhook is logged as a duplicate and ignored (idempotency).
+- **Paystack**: The SDK computes an HMAC-SHA512 hash of the request body using the RAIL_SECRET_KEY and compares it to the x-paystack-signature header.13
+- **Flutterwave**: Similarly, it verifies the verif-hash header.
+- **Replay Protection**: The SDK checks the rail_reference against the database. If a transaction with this reference has already been processed (status completed), the webhook is logged as a duplicate and ignored (idempotency).
 
-### **3.2 Matching Logic: The tx\_ref Strategy**
+### **3.2 Matching Logic: The tx_ref Strategy**
 
-A critical challenge in on-ramps is matching an incoming bank transfer to a specific Stellar user's intent. The SDK solves this via a strict tx\_ref generation strategy.
+A critical challenge in on-ramps is matching an incoming bank transfer to a specific Stellar user's intent. The SDK solves this via a strict tx_ref generation strategy.
 
-1. **Generation**: When a user initiates a deposit in the SEP-24 flow, the SDK generates a UUID (e.g., 550e8400-e29b...).  
-2. **Association**: This UUID is stored in the database as the railReference.  
-3. **Passing to Rail**: When the interactive frontend initializes the payment widget (e.g., PaystackPop), this UUID is passed as the ref or tx\_ref parameter.  
-4. **Reconciliation**: When the webhook arrives, the SDK queries the Sep24Transaction table where railReference matches the webhook's ID.  
-   * **Defensive Check**: The SDK compares the fiat\_amount in the webhook with the amountIn expected in the database. If the user paid less than expected (partial payment), the SDK transitions the status to pending\_anchor (requiring manual intervention) rather than completed, protecting the anchor from slippage or fraud.
+1. **Generation**: When a user initiates a deposit in the SEP-24 flow, the SDK generates a UUID (e.g., 550e8400-e29b...).
+2. **Association**: This UUID is stored in the database as the railReference.
+3. **Passing to Rail**: When the interactive frontend initializes the payment widget (e.g., PaystackPop), this UUID is passed as the ref or tx_ref parameter.
+4. **Reconciliation**: When the webhook arrives, the SDK queries the Sep24Transaction table where railReference matches the webhook's ID.
+   - **Defensive Check**: The SDK compares the fiat_amount in the webhook with the amountIn expected in the database. If the user paid less than expected (partial payment), the SDK transitions the status to pending_anchor (requiring manual intervention) rather than completed, protecting the anchor from slippage or fraud.
 
 ### **3.3 The Settlement Engine (Chain Distribution)**
 
@@ -211,22 +212,22 @@ Once the "Rail" side is confirmed, the "Chain" side must execute. The SDK utiliz
 
 **Execution Flow for Deposit:**
 
-1. **Job Creation**: Upon valid webhook verification, a job is pushed to the AssetDistributor queue.  
-2. **Transaction Building**: The worker loads the Distribution Account key (securely). It checks if the user's account exists on-chain.  
-   * *If Exists*: It builds a payment operation.  
-   * *If New*: It builds a createAccount operation (if sending XLM) or a claimableBalance operation (if sending tokens like USDC to an unfunded account) to ensure the user can receive the funds without a trustline.15  
-3. **Submission**: The transaction is submitted to the Stellar Horizon API.  
-4. **Finalization**: Upon a 200 OK response from Horizon, the database status updates to completed. The stellar\_transaction\_id is saved.
+1. **Job Creation**: Upon valid webhook verification, a job is pushed to the AssetDistributor queue.
+2. **Transaction Building**: The worker loads the Distribution Account key (securely). It checks if the user's account exists on-chain.
+   - _If Exists_: It builds a payment operation.
+   - _If New_: It builds a createAccount operation (if sending XLM) or a claimableBalance operation (if sending tokens like USDC to an unfunded account) to ensure the user can receive the funds without a trustline.15
+3. **Submission**: The transaction is submitted to the Stellar Horizon API.
+4. **Finalization**: Upon a 200 OK response from Horizon, the database status updates to completed. The stellar_transaction_id is saved.
 
 ### **3.4 Handling Withdrawals (Chain-to-Rail)**
 
 Withdrawals reverse the flow. The SDK must listen to the Stellar network for incoming payments to the Anchor's account.
 
-1. **Memo Mapping**: The SDK assigns a unique memo (type: hash or id) to the user during the SEP-24 interactive setup. This memo acts as the unique identifier linking the blockchain transaction to the database record.16  
-2. **Horizon Streaming**: A background worker creates a Server-Sent Events (SSE) stream on the Anchor's account.17  
-3. **Match**: When a payment arrives with a memo matching a pending withdrawal transaction:  
-   * The SDK updates the status to pending\_external.  
-4. **Payout Trigger**: The SDK automatically calls the Rail Provider's Transfer API (e.g., flutterwave.transfers.create) to send fiat to the user's bank account.  
+1. **Memo Mapping**: The SDK assigns a unique memo (type: hash or id) to the user during the SEP-24 interactive setup. This memo acts as the unique identifier linking the blockchain transaction to the database record.16
+2. **Horizon Streaming**: A background worker creates a Server-Sent Events (SSE) stream on the Anchor's account.17
+3. **Match**: When a payment arrives with a memo matching a pending withdrawal transaction:
+   - The SDK updates the status to pending_external.
+4. **Payout Trigger**: The SDK automatically calls the Rail Provider's Transfer API (e.g., flutterwave.transfers.create) to send fiat to the user's bank account.
 5. **Completion**: When the Payout Webhook returns transfer.success, the transaction is marked completed.
 
 ## ---
@@ -244,102 +245,102 @@ Code snippet
 // schema.prisma
 
 datasource db {  
-  provider \= "postgresql"  
-  url      \= env("DATABASE\_URL")  
+ provider \= "postgresql"  
+ url \= env("DATABASE_URL")  
 }
 
 generator client {  
-  provider \= "prisma-client-js"  
-  previewFeatures \= \["postgresqlExtensions"\] // Enable crypto extensions  
+ provider \= "prisma-client-js"  
+ previewFeatures \= \["postgresqlExtensions"\] // Enable crypto extensions  
 }
 
-// Enum mapping strictly to SEP-24 status specifications   
+// Enum mapping strictly to SEP-24 status specifications  
 // Using strict enums prevents invalid state transitions at the DB level  
 enum TransactionStatus {  
-  incomplete  
-  pending\_anchor  
-  pending\_user\_transfer\_start  
-  pending\_user\_transfer\_complete  
-  pending\_external  
-  pending\_trust  
-  pending\_user  
-  completed  
-  refunded  
-  expired  
-  error  
-  no\_market  
-  too\_small  
-  too\_large  
+ incomplete  
+ pending_anchor  
+ pending_user_transfer_start  
+ pending_user_transfer_complete  
+ pending_external  
+ pending_trust  
+ pending_user  
+ completed  
+ refunded  
+ expired  
+ error  
+ no_market  
+ too_small  
+ too_large  
 }
 
 model AnchorUser {  
-  id            String    @id @default(uuid())  
-  email         String?   @unique  
-  kycLevel      Int       @default(0) // 0: None, 1: Basic, 2: Verified  
-  createdAt     DateTime  @default(now())  
-  updatedAt     DateTime  @updatedAt  
-    
-  // Relations  
-  stellarAccounts StellarAccount  
-  transactions    Sep24Transaction  
+ id String @id @default(uuid())  
+ email String? @unique  
+ kycLevel Int @default(0) // 0: None, 1: Basic, 2: Verified  
+ createdAt DateTime @default(now())  
+ updatedAt DateTime @updatedAt
+
+// Relations  
+ stellarAccounts StellarAccount  
+ transactions Sep24Transaction  
 }
 
 model StellarAccount {  
-  publicKey     String    @id  
-  userId        String  
-  user          AnchorUser @relation(fields: \[userId\], references: \[id\])  
-    
-  // SEP-10 Nonce storage for replay protection  
-  lastAuthAt    DateTime?  
-  clientDomain  String?   // Track which wallet app the user uses  
+ publicKey String @id  
+ userId String  
+ user AnchorUser @relation(fields: \[userId\], references: \[id\])
+
+// SEP-10 Nonce storage for replay protection  
+ lastAuthAt DateTime?  
+ clientDomain String? // Track which wallet app the user uses  
 }
 
 model Sep24Transaction {  
-  id            String    @id @default(uuid())  
-  // The SEP-24 transaction ID exposed to wallets  
-    
-  // Relations  
-  userId        String  
-  user          AnchorUser @relation(fields: \[userId\], references: \[id\])  
-    
-  // Transaction Details  
-  status        TransactionStatus @default(incomplete)  
-  kind          String    // 'deposit' or 'withdrawal'  
-  assetCode     String  
-  assetIssuer   String  
-  amountIn      Decimal?  @db.Decimal(20, 7\) // High precision for crypto  
-  amountOut     Decimal?  @db.Decimal(20, 7\)  
-  amountFee     Decimal?  @db.Decimal(20, 7\)  
-    
-  // Rail Mapping  
-  railProvider  String?   // 'flutterwave', 'paystack'  
-  railReference String?   @unique // The tx\_ref used in Fiat world. Unique constraint prevents double-spend.  
-    
-  // Chain Mapping  
-  stellarTxId   String?   // Hash of the Stellar transaction  
-  stellarMemo   String?   // Memo used for withdrawal matching  
-    
-  // Timestamps  
-  startedAt     DateTime  @default(now())  
-  completedAt   DateTime?  
-    
-  // Audit Trail  
-  messages      TransactionMessage  
+ id String @id @default(uuid())  
+ // The SEP-24 transaction ID exposed to wallets
+
+// Relations  
+ userId String  
+ user AnchorUser @relation(fields: \[userId\], references: \[id\])
+
+// Transaction Details  
+ status TransactionStatus @default(incomplete)  
+ kind String // 'deposit' or 'withdrawal'  
+ assetCode String  
+ assetIssuer String  
+ amountIn Decimal? @db.Decimal(20, 7\) // High precision for crypto  
+ amountOut Decimal? @db.Decimal(20, 7\)  
+ amountFee Decimal? @db.Decimal(20, 7\)
+
+// Rail Mapping  
+ railProvider String? // 'flutterwave', 'paystack'  
+ railReference String? @unique // The tx_ref used in Fiat world. Unique constraint prevents double-spend.
+
+// Chain Mapping  
+ stellarTxId String? // Hash of the Stellar transaction  
+ stellarMemo String? // Memo used for withdrawal matching
+
+// Timestamps  
+ startedAt DateTime @default(now())  
+ completedAt DateTime?
+
+// Audit Trail  
+ messages TransactionMessage  
 }
 
 model TransactionMessage {  
-  id            Int       @id @default(autoincrement())  
-  transactionId String  
-  transaction   Sep24Transaction @relation(fields: \[transactionId\], references: \[id\])  
-  message       String    // e.g. "Webhook received with amount 5000"  
-  createdAt     DateTime  @default(now())  
+ id Int @id @default(autoincrement())  
+ transactionId String  
+ transaction Sep24Transaction @relation(fields: \[transactionId\], references: \[id\])  
+ message String // e.g. "Webhook received with amount 5000"  
+ createdAt DateTime @default(now())  
 }
 
 ### **4.2 Key Design Decisions**
 
-* **Decimal Precision**: Financial values utilize @db.Decimal(20, 7). This is critical. Floating point math (Standard JS number) is imprecise and can lead to financial drift. The 7 decimal places align with Stellar's "stroop" unit (1 XLM \= 10,000,000 stroops).  
-* **Status Enum**: The TransactionStatus enum mirrors the exact strings required by the SEP-24 specification. This eliminates the need for a translation layer between the database and the API response.  
-* **Unique Constraints**: railReference is marked @unique. This is a hard database-level constraint. If a webhook is accidentally replayed by the provider (a common occurrence with Flutterwave), the database will reject the duplicate insert/update attempt, preserving the integrity of the ledger.
+- **Decimal Precision**: Financial values utilize @db.Decimal(20, 7). This is critical. Floating point math (Standard JS number) is imprecise and can lead to financial drift. The 7 decimal places align with Stellar's "stroop" unit (1 XLM \= 10,000,000 stroops).
+- **Status Enum**: The TransactionStatus enum mirrors the exact strings required by the SEP-24 specification. This eliminates the need for a translation layer between the database and the API response.
+- **Unique Constraints**: railReference is marked @unique. This is a hard database-level constraint. If a webhook is accidentally replayed by the provider (a common occurrence with Flutterwave), the database will reject the duplicate insert/update attempt, preserving the integrity of the ledger.
 
 ## ---
 
@@ -351,18 +352,18 @@ The "Anchor-in-a-Box" SDK is designed for deployment on modern, ephemeral infras
 
 The recommended production architecture is a **"Headless Vercel \+ Worker Railway"** pattern.
 
-1. **API Layer (Vercel/AWS Lambda)**:  
-   * Hosts the SEP-24 endpoints (/info, /transactions).  
-   * Hosts the SEP-10 Auth endpoint.  
-   * Hosts the Webhook Receivers.  
-   * *Rationale*: These endpoints are HTTP-triggered and benefit from Vercel's global CDN and DDoS protection.  
-2. **Worker Layer (Railway/DigitalOcean)**:  
-   * Hosts the StellarWatcher service.  
-   * Maintains a persistent connection (SSE) to the Horizon API.  
-   * Processes the Redis Job Queue for asset distribution.  
-   * *Rationale*: Serverless functions have execution time limits (usually 10-60 seconds) which make them unsuitable for long-polling blockchain events or processing heavy crypto jobs.
+1. **API Layer (Vercel/AWS Lambda)**:
+   - Hosts the SEP-24 endpoints (/info, /transactions).
+   - Hosts the SEP-10 Auth endpoint.
+   - Hosts the Webhook Receivers.
+   - _Rationale_: These endpoints are HTTP-triggered and benefit from Vercel's global CDN and DDoS protection.
+2. **Worker Layer (Railway/DigitalOcean)**:
+   - Hosts the StellarWatcher service.
+   - Maintains a persistent connection (SSE) to the Horizon API.
+   - Processes the Redis Job Queue for asset distribution.
+   - _Rationale_: Serverless functions have execution time limits (usually 10-60 seconds) which make them unsuitable for long-polling blockchain events or processing heavy crypto jobs.
 
-### 
+###
 
 ### **5.2 The "Deploy to Vercel" Configuration**
 
@@ -374,22 +375,22 @@ The URL is constructed to prompt the user for specific keys:
 
 https://vercel.com/new/clone?repository-url=...\&env=STELLAR\_NETWORK,SEP10\_SIGNING\_KEY,DATABASE\_URL
 
-| Variable | Description | Security Consideration |
-| :---- | :---- | :---- |
-| STELLAR\_NETWORK | testnet or public | Determines Horizon URL |
-| SEP10\_WEB\_AUTH\_DOMAIN | Domain for auth challenges (e.g., anchor.io) | Must match stellar.toml |
-| DATABASE\_URL | Postgres connection string | Should use SSL mode |
-| SEP10\_SIGNING\_KEY | Stellar Secret Key for signing challenges | **Critical**: Can compromise auth |
-| DISTRIBUTION\_SECRET | Secret Key for the asset holding account | **Critical**: Holds funds |
+| Variable              | Description                                  | Security Consideration            |
+| :-------------------- | :------------------------------------------- | :-------------------------------- |
+| STELLAR_NETWORK       | testnet or public                            | Determines Horizon URL            |
+| SEP10_WEB_AUTH_DOMAIN | Domain for auth challenges (e.g., anchor.io) | Must match stellar.toml           |
+| DATABASE_URL          | Postgres connection string                   | Should use SSL mode               |
+| SEP10_SIGNING_KEY     | Stellar Secret Key for signing challenges    | **Critical**: Can compromise auth |
+| DISTRIBUTION_SECRET   | Secret Key for the asset holding account     | **Critical**: Holds funds         |
 
 ### **5.3 Secret Management: Supabase Vault Integration**
 
 Storing high-value private keys (like the Distribution Account Secret) in plain environment variables is a security risk. The SDK natively integrates with **Supabase Vault** 20 via its database adapter.
 
-* **Mechanism**: The DISTRIBUTION\_SECRET env var is replaced with a KEY\_ID (UUID).  
-* **Runtime Decryption**: When the worker needs to sign a transaction, the SDK executes a SQL query:  
-  select decrypted\_secret from vault.decrypted\_secrets where key\_id \= $1  
-* **Security Benefit**: The private key is never stored in the application's codebase or environment configuration. It exists only in the secure Vault table (encrypted at rest) and is decrypted only within the ephemeral memory of the signing process.
+- **Mechanism**: The DISTRIBUTION_SECRET env var is replaced with a KEY_ID (UUID).
+- **Runtime Decryption**: When the worker needs to sign a transaction, the SDK executes a SQL query:  
+  select decrypted_secret from vault.decrypted_secrets where key_id \= $1
+- **Security Benefit**: The private key is never stored in the application's codebase or environment configuration. It exists only in the secure Vault table (encrypted at rest) and is decrypted only within the ephemeral memory of the signing process.
 
 ### **5.4 One-Click Docker Strategy**
 
@@ -408,7 +409,7 @@ RUN npm ci && npm run build
 FROM node:18\-alpine AS runner  
 WORKDIR /app  
 COPY \--from=builder /app/dist./dist  
-COPY \--from=builder /app/node\_modules./node\_modules  
+COPY \--from=builder /app/node_modules./node_modules  
 COPY prisma./prisma
 
 \# Entrypoint: Handles Database Migration and Server Start  
@@ -424,25 +425,25 @@ This Dockerfile is optimized for African hosting environments (which may have ba
 
 In African markets, Mobile Money (MoMo) transactions via USSD are not always instantaneous. Network congestion can lead to timeouts where the user is debited, but the webhook is delayed by minutes or even hours.
 
-* **Architectural Response**: The SDK's webhook handler is designed to be **idempotent**. It can accept the same "success" webhook multiple times without duplicating the asset distribution.  
-* **Polling Fallback**: To mitigate missed webhooks, the SDK includes a CRON module. This background job periodically queries the Rails API (e.g., flutterwave.Transaction.verify) for all transactions in the pending\_user\_transfer\_start state that are older than 10 minutes. If the API confirms success, the SDK manually triggers the completion flow, ensuring the user receives their funds even if the webhook failed.
+- **Architectural Response**: The SDK's webhook handler is designed to be **idempotent**. It can accept the same "success" webhook multiple times without duplicating the asset distribution.
+- **Polling Fallback**: To mitigate missed webhooks, the SDK includes a CRON module. This background job periodically queries the Rails API (e.g., flutterwave.Transaction.verify) for all transactions in the pending_user_transfer_start state that are older than 10 minutes. If the API confirms success, the SDK manually triggers the completion flow, ensuring the user receives their funds even if the webhook failed.
 
 ### **6.2 KYC and Identity Federation**
 
 Identity verification in Africa is fragmented (BVN in Nigeria, Ghana Card in Ghana, National ID in Kenya). SEP-24 requires the Anchor to verify identity, but building these integrations from scratch is complex.
 
-* **Plugin Opportunity**: The SDK's modularity allows for "Identity Plugins." A developer can install @stellar/anchor-box-plugin-verify-me, which hooks into the pending\_anchor state. When a transaction enters this state, the plugin automatically triggers a verification check against the local identity authority. Only upon success does the transaction proceed to pending\_user\_transfer\_start.
+- **Plugin Opportunity**: The SDK's modularity allows for "Identity Plugins." A developer can install @stellar/anchor-box-plugin-verify-me, which hooks into the pending_anchor state. When a transaction enters this state, the plugin automatically triggers a verification check against the local identity authority. Only upon success does the transaction proceed to pending_user_transfer_start.
 
 ### **6.3 Cost Optimization via Fee Bumping**
 
 Stellar transactions require fees (paid in XLM). A significant friction point for new users is that they may have USDC but no XLM to pay for the withdrawal transaction.
 
-* **Solution**: The SDK employs **Fee Bumping** (CAP-15).  
-* **Mechanism**: The Distribution Account signs the inner transaction (the payment). A dedicated "Fee Account" signs the outer transaction, paying the gas.  
-* **Benefit**: The user receives the exact amount of USDC/NGNC requested, without dust-level deductions for network fees. This provides a cleaner accounting experience and simplifies tax reporting for the anchor.
+- **Solution**: The SDK employs **Fee Bumping** (CAP-15).
+- **Mechanism**: The Distribution Account signs the inner transaction (the payment). A dedicated "Fee Account" signs the outer transaction, paying the gas.
+- **Benefit**: The user receives the exact amount of USDC/NGNC requested, without dust-level deductions for network fees. This provides a cleaner accounting experience and simplifies tax reporting for the anchor.
 
 ## ---
 
 **Conclusion**
 
-The "Anchor-in-a-Box" SDK represents a paradigm shift from *implementing* protocols to *configuring* capabilities. By wrapping the rigor of SEP-10 and SEP-24 in a type-safe, fluent interface similar to Better-Auth, and strictly defining the data mapping between African Fiat Rails and the Stellar Ledger, this architecture empowers developers to deploy production-grade financial infrastructure in a fraction of the time. The combination of Prisma's rigorous schema enforcement, Supabase Vault's security, and the "Headless \+ Worker" deployment strategy ensures that the system is not only developer-friendly but robust enough to handle the realities of cross-border value movement in emerging markets. Future iterations of this architecture will expand the plugin ecosystem to support SEP-31 (Cross-Border Remittances) and SEP-38 (RFQs), fully closing the loop on the African corridor remittance economy.
+The "Anchor-in-a-Box" SDK represents a paradigm shift from _implementing_ protocols to _configuring_ capabilities. By wrapping the rigor of SEP-10 and SEP-24 in a type-safe, fluent interface similar to Better-Auth, and strictly defining the data mapping between African Fiat Rails and the Stellar Ledger, this architecture empowers developers to deploy production-grade financial infrastructure in a fraction of the time. The combination of Prisma's rigorous schema enforcement, Supabase Vault's security, and the "Headless \+ Worker" deployment strategy ensures that the system is not only developer-friendly but robust enough to handle the realities of cross-border value movement in emerging markets. Future iterations of this architecture will expand the plugin ecosystem to support SEP-31 (Cross-Border Remittances) and SEP-38 (RFQs), fully closing the loop on the African corridor remittance economy.
