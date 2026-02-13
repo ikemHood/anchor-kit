@@ -12,3 +12,7 @@ Please describe how to verify the changes.
 - [ ] I have added tests for my changes.
 - [ ] I have updated the documentation accordingly.
 - [ ] I have run `bun run test` and `bun run lint` locally.
+
+## Issue Reference
+
+Closes #
