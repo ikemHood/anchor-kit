@@ -6,33 +6,33 @@ describe('Customer', () => {
   it('works with just the required fields', () => {
     const c: Customer = {
       id: 'abc-123',
-      accountId: 'GABCD1234',
-      createdAt: new Date(),
+      account_id: 'GABCD1234',
+      created_at: Date.now(),
     };
 
     expect(c.id).toBe('abc-123');
-    expect(c.accountId).toBe('GABCD1234');
-    expect(c.createdAt).toBeInstanceOf(Date);
+    expect(c.account_id).toBe('GABCD1234');
+    expect(c.created_at).toBeTypeOf('number');
   });
 
   // -- optional fields --
 
-  it('accepts email, phone, and kycData when provided', () => {
+  it('accepts optional contact and kyc fields', () => {
     const c: Customer = {
       id: 'abc-123',
-      accountId: 'GABCD1234',
-      createdAt: new Date(),
-      email: 'user@example.com',
-      phone: '+2348012345678',
-      kycData: { status: 'pending' },
+      account_id: 'GABCD1234',
+      created_at: Date.now(),
+      email_address: 'user@example.com',
+      phone_number: '+2348012345678',
+      kyc_data: { status: 'pending' },
     };
 
-    expect(c.email).toBe('user@example.com');
-    expect(c.phone).toBe('+2348012345678');
-    expect(c.kycData?.status).toBe('pending');
+    expect(c.email_address).toBe('user@example.com');
+    expect(c.phone_number).toBe('+2348012345678');
+    expect(c.kyc_data?.status).toBe('pending');
   });
 
-  it('allows kycData with SEP-12 identity fields', () => {
+  it('allows kyc_data with SEP-12 identity fields', () => {
     const kyc: KycData = {
       status: 'approved',
       first_name: 'Ada',
@@ -42,36 +42,36 @@ describe('Customer', () => {
 
     const c: Customer = {
       id: 'xyz-789',
-      accountId: 'GXYZ9876',
-      createdAt: new Date(),
-      kycData: kyc,
+      account_id: 'GXYZ9876',
+      created_at: Date.now(),
+      kyc_data: kyc,
     };
 
-    expect(c.kycData?.first_name).toBe('Ada');
+    expect(c.kyc_data?.first_name).toBe('Ada');
   });
 
   // -- compile-time: missing required fields --
 
   it('rejects missing required fields at compile time', () => {
-    // @ts-expect-error — missing id, accountId, createdAt
+    // @ts-expect-error — missing id, account_id, created_at
     const bad1: Customer = {};
 
-    // @ts-expect-error — missing accountId and createdAt
+    // @ts-expect-error — missing account_id and created_at
     const bad2: Customer = { id: 'abc' };
 
     expect(bad1).toBeDefined();
     expect(bad2).toBeDefined();
   });
 
-  // -- compile-time: kycData shape enforcement --
+  // -- compile-time: kyc_data shape enforcement --
 
-  it('rejects wrong kycData shape at compile time', () => {
+  it('rejects wrong kyc_data shape at compile time', () => {
     const bad: Customer = {
       id: 'abc',
-      accountId: 'GABCD',
-      createdAt: new Date(),
-      // @ts-expect-error — kycData must match KycData shape
-      kycData: { wrong: true },
+      account_id: 'GABCD',
+      created_at: Date.now(),
+      // @ts-expect-error — kyc_data must match KycData shape
+      kyc_data: { wrong: true },
     };
 
     expect(bad).toBeDefined();
