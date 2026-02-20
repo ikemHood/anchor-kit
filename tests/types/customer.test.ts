@@ -24,19 +24,20 @@ describe('Customer', () => {
       createdAt: new Date(),
       email: 'user@example.com',
       phone: '+2348012345678',
-      kycData: { level: 1, status: 'pending' },
+      kycData: { status: 'pending' },
     };
 
     expect(c.email).toBe('user@example.com');
     expect(c.phone).toBe('+2348012345678');
-    expect(c.kycData?.level).toBe(1);
+    expect(c.kycData?.status).toBe('pending');
   });
 
-  it('allows kycData with extra SEP-9 fields', () => {
+  it('allows kycData with SEP-12 identity fields', () => {
     const kyc: KycData = {
-      level: 2,
-      status: 'accepted',
-      fields: { first_name: 'Ada', last_name: 'Lovelace' },
+      status: 'approved',
+      first_name: 'Ada',
+      last_name: 'Lovelace',
+      email_address: 'ada@example.com',
     };
 
     const c: Customer = {
@@ -46,7 +47,7 @@ describe('Customer', () => {
       kycData: kyc,
     };
 
-    expect(c.kycData?.fields?.first_name).toBe('Ada');
+    expect(c.kycData?.first_name).toBe('Ada');
   });
 
   // -- compile-time: missing required fields --

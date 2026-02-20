@@ -1,4 +1,4 @@
-import type { KycData } from './kyc-data.ts';
+import type { KycData } from './foundation.ts';
 
 /**
  * Represents an anchor customer.

@@ -39,9 +39,7 @@ export interface DepositTransaction extends BaseTransactionResponse {
  * }
  * ```
  */
-export function isDepositTransaction(
-  transaction: unknown
-): transaction is DepositTransaction {
+export function isDepositTransaction(transaction: unknown): transaction is DepositTransaction {
   return (
     typeof transaction === 'object' &&
     transaction !== null &&
