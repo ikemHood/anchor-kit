@@ -1,5 +1,5 @@
 /**
- * Type tests for SEP-24 Transactions
+ * Type tests for DepositTransaction
  * Verifies discriminated union narrowing and type compatibility
  */
 

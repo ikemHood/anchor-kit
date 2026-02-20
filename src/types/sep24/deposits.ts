@@ -3,7 +3,7 @@
  * @see https://developers.stellar.org/docs/learn/fundamentals/stellar-ecosystem-proposals/sep-0024
  */
 
-import type { BaseTransactionResponse } from './common';
+import type { BaseTransactionResponse, TransactionStatus } from './common';
 
 /**
  * DepositTransaction represents a hosted deposit transaction
@@ -39,7 +39,9 @@ export interface DepositTransaction extends BaseTransactionResponse {
  * }
  * ```
  */
-export function isDepositTransaction(transaction: unknown): transaction is DepositTransaction {
+export function isDepositTransaction(
+  transaction: unknown
+): transaction is DepositTransaction {
   return (
     typeof transaction === 'object' &&
     transaction !== null &&
