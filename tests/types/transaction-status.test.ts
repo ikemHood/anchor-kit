@@ -3,12 +3,36 @@ import { TRANSACTION_STATUSES, type TransactionStatus } from '@/types/index.ts';
 describe('TransactionStatus', () => {
   // -- runtime checks on the status array --
 
-  it('has exactly 14 entries', () => {
-    expect(TRANSACTION_STATUSES).toHaveLength(14);
-  });
-
   it('covers every SEP-24 lifecycle status', () => {
     const expected = [
+      'completed',
+      'error',
+      'expired',
+      'incomplete',
+      'no_market',
+      'pending_anchor',
+      'pending_external',
+      'pending_trust',
+      'pending_user',
+      'pending_user_transfer_complete',
+      'pending_user_transfer_start',
+      'refunded',
+      'too_large',
+      'too_small',
+    ];
+
+    expect([...TRANSACTION_STATUSES].sort()).toEqual(expected);
+  });
+
+  it('contains no duplicates', () => {
+    const unique = new Set(TRANSACTION_STATUSES);
+    expect(unique.size).toBe(TRANSACTION_STATUSES.length);
+  });
+
+  // -- compile-time checks (tsc catches these before tests even run) --
+
+  it('accepts every valid status', () => {
+    const all: TransactionStatus[] = [
       'incomplete',
       'pending_anchor',
       'pending_user_transfer_start',
@@ -25,49 +49,7 @@ describe('TransactionStatus', () => {
       'too_large',
     ];
 
-    for (const s of expected) {
-      expect(TRANSACTION_STATUSES).toContain(s);
-    }
-  });
-
-  it('contains no duplicates', () => {
-    const unique = new Set(TRANSACTION_STATUSES);
-    expect(unique.size).toBe(TRANSACTION_STATUSES.length);
-  });
-
-  // -- compile-time checks (tsc catches these before tests even run) --
-
-  it('accepts every valid status', () => {
-    const a: TransactionStatus = 'incomplete';
-    const b: TransactionStatus = 'pending_anchor';
-    const c: TransactionStatus = 'pending_user_transfer_start';
-    const d: TransactionStatus = 'pending_user_transfer_complete';
-    const e: TransactionStatus = 'pending_external';
-    const f: TransactionStatus = 'pending_trust';
-    const g: TransactionStatus = 'pending_user';
-    const h: TransactionStatus = 'completed';
-    const i: TransactionStatus = 'refunded';
-    const j: TransactionStatus = 'expired';
-    const k: TransactionStatus = 'error';
-    const l: TransactionStatus = 'no_market';
-    const m: TransactionStatus = 'too_small';
-    const n: TransactionStatus = 'too_large';
-
-    // keep the compiler happy about unused vars
-    expect(a).toBeDefined();
-    expect(b).toBeDefined();
-    expect(c).toBeDefined();
-    expect(d).toBeDefined();
-    expect(e).toBeDefined();
-    expect(f).toBeDefined();
-    expect(g).toBeDefined();
-    expect(h).toBeDefined();
-    expect(i).toBeDefined();
-    expect(j).toBeDefined();
-    expect(k).toBeDefined();
-    expect(l).toBeDefined();
-    expect(m).toBeDefined();
-    expect(n).toBeDefined();
+    expect(all).toBeDefined();
   });
 
   it('rejects invalid strings at compile time', () => {
