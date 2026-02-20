@@ -30,7 +30,7 @@ export interface BaseTransactionResponse {
   /** Current status of the transaction */
   status: TransactionStatus;
 
-  /** ISO 8601 datetime when transaction was created */
+  /** A URL the user can visit to see more information about a transaction */
   more_info_url?: string;
 
   /** Amount being transferred */
