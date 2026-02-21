@@ -91,6 +91,49 @@ describe('AnchorConfig', () => {
     });
   });
 
+  describe('isNetworkPassphrase()', () => {
+    it('should return true for configured network passphrase', () => {
+      const configWithPassphrase: AnchorKitConfig = {
+        ...validBaseConfig,
+        network: {
+          ...validBaseConfig.network,
+          networkPassphrase: 'Custom Network Passphrase',
+        },
+      };
+      const config = new AnchorConfig(configWithPassphrase);
+      expect(config.isNetworkPassphrase('Custom Network Passphrase')).toBe(true);
+      expect(config.isNetworkPassphrase('Test SDF Network ; September 2015')).toBe(false);
+    });
+
+    it('should fall back to testnet default passphrase', () => {
+      const config = new AnchorConfig(validBaseConfig); // validBaseConfig has network: 'testnet'
+      expect(config.isNetworkPassphrase('Test SDF Network ; September 2015')).toBe(true);
+      expect(config.isNetworkPassphrase('Wrong Passphrase')).toBe(false);
+    });
+
+    it('should fall back to public default passphrase', () => {
+      const configPublic: AnchorKitConfig = {
+        ...validBaseConfig,
+        network: { network: 'public' },
+      };
+      const config = new AnchorConfig(configPublic);
+      expect(config.isNetworkPassphrase('Public Global Stellar Network ; September 2015')).toBe(
+        true,
+      );
+      expect(config.isNetworkPassphrase('Test SDF Network ; September 2015')).toBe(false);
+    });
+
+    it('should fall back to futurenet default passphrase', () => {
+      const configFuturenet: AnchorKitConfig = {
+        ...validBaseConfig,
+        network: { network: 'futurenet' },
+      };
+      const config = new AnchorConfig(configFuturenet);
+      expect(config.isNetworkPassphrase('Test SDF Future Network ; Fall 2022')).toBe(true);
+      expect(config.isNetworkPassphrase('Test SDF Network ; September 2015')).toBe(false);
+    });
+  });
+
   describe('validate()', () => {
     it('should pass for a valid configuration', () => {
       const config = new AnchorConfig(validBaseConfig);

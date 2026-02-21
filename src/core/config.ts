@@ -50,6 +50,40 @@ export class AnchorConfig {
   }
 
   /**
+   * Compare a provided passphrase against the configured network passphrase.
+   * Uses network default passphrases if an explicit one is not configured.
+   *
+   * @param passphrase - The passphrase to check.
+   * @returns boolean - True if it matches, false otherwise.
+   */
+  public isNetworkPassphrase(passphrase: string): boolean {
+    const configuredPassphrase = this.config.network?.networkPassphrase;
+
+    if (configuredPassphrase) {
+      return passphrase === configuredPassphrase;
+    }
+
+    const network = this.config.network?.network;
+    let defaultPassphrase: string;
+
+    switch (network) {
+      case 'public':
+        defaultPassphrase = 'Public Global Stellar Network ; September 2015';
+        break;
+      case 'testnet':
+        defaultPassphrase = 'Test SDF Network ; September 2015';
+        break;
+      case 'futurenet':
+        defaultPassphrase = 'Test SDF Future Network ; Fall 2022';
+        break;
+      default:
+        return false;
+    }
+
+    return passphrase === defaultPassphrase;
+  }
+
+  /**
    * Validate the configuration object for required secrets,
    * URLs, network values, and basic structural invariants.
    * Throws ConfigurationError if validation fails.
