@@ -38,6 +38,17 @@ export class AnchorConfig {
   }
 
   /**
+   * Return required KYC fields by asset code.
+   * Returns an empty list when no policy exists or the asset is unmapped.
+   *
+   * @param code - The exact asset code to look up.
+   * @returns An array of required KYC field names.
+   */
+  public getKycRequiredFields(code: string): string[] {
+    return this.config.kycRequired?.[code] || [];
+  }
+
+  /**
    * Validate the configuration object for required secrets,
    * URLs, network values, and basic structural invariants.
    * Throws ConfigurationError if validation fails.

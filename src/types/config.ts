@@ -495,6 +495,12 @@ export interface AnchorKitConfig {
   kyc?: KycConfig;
 
   /**
+   * Required KYC fields by asset code
+   * @optional
+   */
+  kycRequired?: Record<string, string[]>;
+
+  /**
    * Operational configuration
    * @optional
    */
