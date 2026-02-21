@@ -59,6 +59,38 @@ describe('AnchorConfig', () => {
     });
   });
 
+  describe('getKycRequiredFields()', () => {
+    it('should return configured fields for a mapped asset', () => {
+      const configWithKyc: AnchorKitConfig = {
+        ...validBaseConfig,
+        kycRequired: {
+          USDC: ['first_name', 'last_name', 'email'],
+        },
+      };
+      const config = new AnchorConfig(configWithKyc);
+      const fields = config.getKycRequiredFields('USDC');
+      expect(fields).toEqual(['first_name', 'last_name', 'email']);
+    });
+
+    it('should return an empty list for an unmapped asset', () => {
+      const configWithKyc: AnchorKitConfig = {
+        ...validBaseConfig,
+        kycRequired: {
+          USDC: ['first_name', 'last_name', 'email'],
+        },
+      };
+      const config = new AnchorConfig(configWithKyc);
+      const fields = config.getKycRequiredFields('NGNC');
+      expect(fields).toEqual([]);
+    });
+
+    it('should return an empty list when no policy exists (kycRequired is undefined)', () => {
+      const config = new AnchorConfig(validBaseConfig);
+      const fields = config.getKycRequiredFields('USDC');
+      expect(fields).toEqual([]);
+    });
+  });
+
   describe('validate()', () => {
     it('should pass for a valid configuration', () => {
       const config = new AnchorConfig(validBaseConfig);
