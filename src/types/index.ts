@@ -18,5 +18,6 @@ export type {
   RefundInfo,
 } from './transaction.ts';
 
+export * from './config';
 export * from './sep24';
 export * from './foundation';
