@@ -89,20 +89,16 @@ export class AnchorConfig {
 
     // Validate database URL loosely (could be a connection string or file path)
     if (!this.isValidDatabaseUrl(framework.database.url)) {
-throw new ConfigurationError('Invalid database URL format');
+      throw new ConfigurationError('Invalid database URL format');
     }
 
     // Validate specific URLs if they are provided
     if (server.interactiveDomain && !this.isValidUrl(server.interactiveDomain)) {
-      throw new ConfigurationError(
-        'Invalid URL format for server.interactiveDomain',
-      );
+      throw new ConfigurationError('Invalid URL format for server.interactiveDomain');
     }
 
     if (network.horizonUrl && !this.isValidUrl(network.horizonUrl)) {
-      throw new ConfigurationError(
-        'Invalid URL format for network.horizonUrl',
-      );
+      throw new ConfigurationError('Invalid URL format for network.horizonUrl');
     }
 
     const { metadata } = this.config;
