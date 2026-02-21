@@ -69,8 +69,7 @@ describe('AnchorConfig', () => {
       // @ts-expect-error this is for test cases
       const invalidConfig: AnchorKitConfig = { ...validBaseConfig, network: undefined };
       const config = new AnchorConfig(invalidConfig);
-      expect(() => config.validate()).toThrow(ConfigurationError);
-      expect(() => config.validate()).toThrow(/network/);
+      expect(() => config.validate()).toThrow(ConfigurationError, /network/);
     });
 
     it('should throw ConfigurationError if required secrets are missing', () => {
