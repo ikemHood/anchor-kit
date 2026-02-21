@@ -101,7 +101,7 @@ throw new ConfigurationError('Invalid database URL format');
 
     if (network.horizonUrl && !this.isValidUrl(network.horizonUrl)) {
       throw new ConfigurationError(
-        `Invalid URL format for network.horizonUrl: ${network.horizonUrl}`,
+        'Invalid URL format for network.horizonUrl',
       );
     }
 
