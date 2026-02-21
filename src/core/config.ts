@@ -107,7 +107,7 @@ export class AnchorConfig {
 
     const { metadata } = this.config;
     if (metadata?.tomlUrl && !this.isValidUrl(metadata.tomlUrl)) {
-      throw new ConfigurationError(`Invalid URL format for metadata.tomlUrl: ${metadata.tomlUrl}`);
+      throw new ConfigurationError('Invalid URL format for metadata.tomlUrl');
     }
 
     // Validate network-related values
