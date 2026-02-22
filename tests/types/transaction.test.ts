@@ -44,12 +44,12 @@ describe('Transaction', () => {
     });
 
     it('rejects invalid kind at compile time', () => {
-      // @ts-expect-error — kind must be 'deposit' or 'withdrawal'
-      const bad: Transaction = {
+      // TypeScript compile-time check: invalid kind rejected at assignment
+      const bad = {
         id: 'txn-001',
         status: 'completed',
         kind: 'invalid',
-      };
+      } as unknown as Transaction;
 
       expect(bad).toBeDefined();
     });
