@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { AnchorConfig } from '../../src/core/config.ts';
-import { ConfigurationError } from '../../src/core/errors.ts';
-import type { AnchorKitConfig } from '../../src/types/config.ts';
+import { AnchorConfig } from '@/core/config.ts';
+import { ConfigurationError } from '@/core/errors.ts';
+import type { AnchorKitConfig } from '@/types/config.ts';
 
 describe('AnchorConfig', () => {
   const validBaseConfig: AnchorKitConfig = {

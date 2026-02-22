@@ -1,18 +1,11 @@
-export class AnchorKitError extends Error {
-  public statusCode: number;
-  public errorCode: string;
+export abstract class AnchorKitError extends Error {
+  public abstract readonly statusCode: number;
+  public abstract readonly errorCode: string;
   public context?: Record<string, unknown>;
 
-  constructor(
-    message: string,
-    statusCode = 500,
-    errorCode = 'INTERNAL_ERROR',
-    context?: Record<string, unknown>,
-  ) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message);
     this.name = this.constructor.name;
-    this.statusCode = statusCode;
-    this.errorCode = errorCode;
     this.context = context;
   }
 
@@ -20,14 +13,17 @@ export class AnchorKitError extends Error {
     return {
       error: this.errorCode,
       message: this.message,
-      ...(typeof (globalThis as any).process !== 'undefined' &&
-        (globalThis as any).process.env?.NODE_ENV === 'development' && { context: this.context }),
+      ...(typeof globalThis.process !== 'undefined' &&
+        globalThis.process.env?.NODE_ENV === 'development' && { context: this.context }),
     };
   }
 }
 
 export class ConfigurationError extends AnchorKitError {
+  public readonly statusCode = 500;
+  public readonly errorCode = 'INVALID_CONFIG';
+
   constructor(message: string, context?: Record<string, unknown>) {
-    super(message, 500, 'INVALID_CONFIG', context);
+    super(message, context);
   }
 }
