@@ -141,7 +141,7 @@ describe('AnchorConfig', () => {
     });
 
     it('should throw ConfigurationError if top-level network is missing', () => {
-      // @ts-ignore this is for test cases
+      // @ts-expect-error this is for test cases
       const invalidConfig: AnchorKitConfig = { ...validBaseConfig, network: undefined };
       const config = new AnchorConfig(invalidConfig);
       expect(() => config.validate()).toThrow(ConfigurationError);
@@ -173,7 +173,7 @@ describe('AnchorConfig', () => {
     it('should throw ConfigurationError for invalid network string', () => {
       const invalidConfig: AnchorKitConfig = {
         ...validBaseConfig,
-        // @ts-ignore this is for test cases
+        // @ts-expect-error this is for test cases
         network: { network: 'invalidnet' },
       };
       const config = new AnchorConfig(invalidConfig);
@@ -185,7 +185,7 @@ describe('AnchorConfig', () => {
     it('should validate framework database configuration', () => {
       const invalidConfig: AnchorKitConfig = {
         ...validBaseConfig,
-        // @ts-ignore this is for test cases
+        // @ts-expect-error this is for test cases
         framework: { database: { provider: 'postgres' } }, // missing url
       };
       const config = new AnchorConfig(invalidConfig);

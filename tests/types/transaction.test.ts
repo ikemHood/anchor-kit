@@ -44,22 +44,21 @@ describe('Transaction', () => {
     });
 
     it('rejects invalid kind at compile time', () => {
-      // This case intentionally constructs an invalid `Transaction` shape
-      // for type-test purposes; cast through `unknown` so project tsc passes
-      const bad = {
+      // @ts-expect-error — kind must be 'deposit' or 'withdrawal'
+      const bad: Transaction = {
         id: 'txn-001',
         status: 'completed',
         kind: 'invalid',
-      } as unknown as Transaction;
+      };
 
       expect(bad).toBeDefined();
     });
 
     it('rejects missing required fields at compile time', () => {
-      // @ts-ignore — missing id, status, kind
+      // @ts-expect-error — missing id, status, kind
       const bad1: Transaction = {};
 
-      // @ts-ignore — missing status and kind
+      // @ts-expect-error — missing status and kind
       const bad2: Transaction = { id: 'txn-001' };
 
       expect(bad1).toBeDefined();

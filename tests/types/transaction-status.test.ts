@@ -55,13 +55,13 @@ describe('TransactionStatus', () => {
   });
 
   it('rejects invalid strings at compile time', () => {
-    // @ts-ignore — not a real status
+    // @ts-expect-error — not a real status
     const x: TransactionStatus = 'invalid';
 
-    // @ts-ignore — wrong casing
+    // @ts-expect-error — wrong casing
     const y: TransactionStatus = 'COMPLETED';
 
-    // @ts-ignore — partial match doesn't count
+    // @ts-expect-error — partial match doesn't count
     const z: TransactionStatus = 'pending';
 
     expect(x).toBeDefined();
