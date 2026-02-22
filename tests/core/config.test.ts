@@ -33,7 +33,17 @@ describe('AnchorConfig', () => {
       const config = new AnchorConfig(validBaseConfig);
       expect(config.get('network').network).toBe('testnet');
       expect(config.get('server').port).toBe(3000);
-      expect(config.getConfig()).toEqual(validBaseConfig);
+      expect(config.getConfig()).toMatchObject(validBaseConfig);
+    });
+
+    it('should apply operational defaults when not provided', () => {
+      const cfg = new AnchorConfig(validBaseConfig);
+      const op = cfg.get('operational');
+      expect(op).toBeDefined();
+      expect(op?.webhooksEnabled).toBe(true);
+      expect(op?.queueBackend).toBe('memory');
+      expect(op?.corsEnabled).toBe(true);
+      expect(op?.transactionRetentionDays).toBe(90);
     });
   });
 

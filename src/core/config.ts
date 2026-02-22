@@ -1,4 +1,4 @@
-import type { AnchorKitConfig, Asset } from '../types/config.ts';
+import type { AnchorKitConfig, Asset, NetworkConfig } from '../types/config.ts';
 import { ConfigurationError } from './errors.ts';
 
 /**
@@ -8,8 +8,82 @@ import { ConfigurationError } from './errors.ts';
 export class AnchorConfig {
   private config: AnchorKitConfig;
 
-  constructor(config: AnchorKitConfig) {
-    this.config = config;
+  constructor(config: Partial<AnchorKitConfig>) {
+    const merged = this.mergeWithDefaults(config || {});
+    this.config = this.deepFreeze(merged) as AnchorKitConfig;
+  }
+
+  /**
+   * Merge partial config with sensible defaults for network and operational.
+   */
+  private mergeWithDefaults(input: Partial<AnchorKitConfig>): AnchorKitConfig {
+    const defaultNetworkPassphrases: Record<string, string> = {
+      public: 'Public Global Stellar Network ; September 2015',
+      testnet: 'Test SDF Network ; September 2015',
+      futurenet: 'Test SDF Future Network ; Fall 2022',
+    };
+
+    const hasNetworkProp = Object.prototype.hasOwnProperty.call(input, 'network');
+    const networkInput = input.network as Partial<NetworkConfig> | undefined;
+
+    let network: NetworkConfig | undefined;
+    if (hasNetworkProp && typeof networkInput === 'undefined') {
+      network = undefined;
+    } else {
+      network = {
+        network: networkInput?.network || 'testnet',
+        horizonUrl: networkInput?.horizonUrl,
+        networkPassphrase:
+          networkInput?.networkPassphrase ||
+          defaultNetworkPassphrases[networkInput?.network || 'testnet'],
+      };
+    }
+
+    const operationalInput = input.operational as Partial<AnchorKitConfig['operational']> | undefined;
+    const operational = {
+      name: operationalInput?.name,
+      website: operationalInput?.website,
+      supportEmail: operationalInput?.supportEmail,
+      address: operationalInput?.address,
+      webhooksEnabled: operationalInput?.webhooksEnabled ?? true,
+      queueBackend: operationalInput?.queueBackend ?? 'memory',
+      redisUrl: operationalInput?.redisUrl,
+      corsEnabled: operationalInput?.corsEnabled ?? true,
+      transactionRetentionDays: operationalInput?.transactionRetentionDays ?? 90,
+    } as AnchorKitConfig['operational'];
+
+    // Keep original input values for required sections so explicit `undefined`
+    // is preserved (validation will catch missing required fields).
+    const merged: any = {
+      network,
+      server: input.server,
+      security: input.security,
+      assets: input.assets,
+      kyc: input.kyc,
+      kycRequired: input.kycRequired,
+      operational,
+      metadata: input.metadata,
+      framework: input.framework,
+    };
+
+    return merged as AnchorKitConfig;
+  }
+
+  /**
+   * Deep freeze an object to produce an immutable configuration snapshot.
+   */
+  private deepFreeze<T>(obj: T): T {
+    if (obj === null || typeof obj !== 'object') return obj;
+
+    // Freeze children first
+    for (const key of Object.getOwnPropertyNames(obj) as Array<keyof T>) {
+      const value = (obj as any)[key];
+      if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+        this.deepFreeze(value);
+      }
+    }
+
+    return Object.freeze(obj);
   }
 
   /**
