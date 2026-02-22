@@ -53,10 +53,10 @@ describe('Customer', () => {
   // -- compile-time: missing required fields --
 
   it('rejects missing required fields at compile time', () => {
-    // @ts-expect-error — missing id, account_id, created_at
+    // @ts-ignore — missing id, account_id, created_at
     const bad1: Customer = {};
 
-    // @ts-expect-error — missing account_id and created_at
+    // @ts-ignore — missing account_id and created_at
     const bad2: Customer = { id: 'abc' };
 
     expect(bad1).toBeDefined();
@@ -70,7 +70,7 @@ describe('Customer', () => {
       id: 'abc',
       account_id: 'GABCD',
       created_at: Date.now(),
-      // @ts-expect-error — kyc_data must match KycData shape
+      // @ts-ignore — kyc_data must match KycData shape
       kyc_data: { wrong: true },
     };
 

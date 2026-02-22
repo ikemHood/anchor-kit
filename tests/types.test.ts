@@ -3,14 +3,13 @@
  * Verifies discriminated union narrowing and type compatibility
  */
 
-import { describe, it, expectTypeOf } from 'vitest';
+import { describe, it, expectTypeOf, expect } from 'vitest';
 import type {
   DepositTransaction,
   Sep24TransactionResponse,
   WithdrawalTransaction,
   TransactionNotFoundError,
   BaseTransactionResponse,
-  TransactionNotFoundError,
 } from '../src/types/sep24';
 import {
   AnchorKitConfig,
@@ -25,7 +24,11 @@ import {
   StellarNetwork,
   KycLevel,
 } from '../src/types';
-import { isDepositTransaction, isWithdrawalTransaction, isTransactionNotFoundError } from '../src/types/sep24';
+import {
+  isDepositTransaction,
+  isWithdrawalTransaction,
+  isTransactionNotFoundError,
+} from '../src/types/sep24';
 import type { TransactionStatus } from '../src/types';
 
 describe('DepositTransaction Type Tests', () => {
@@ -112,14 +115,14 @@ describe('DepositTransaction Type Tests', () => {
 
     it('should support an error branch in Sep24TransactionResponse', () => {
       const errorTx: Sep24TransactionResponse = {
-        type: 'error',
+        type: 'not_found',
         error: 'transaction not found',
       };
 
       const tx: Sep24TransactionResponse = errorTx;
       expectTypeOf(tx).toMatchTypeOf<Sep24TransactionResponse>();
 
-      if (tx.type === 'error') {
+      if (tx.type === 'not_found') {
         expectTypeOf(tx).toEqualTypeOf<TransactionNotFoundError>();
       }
     });
@@ -413,10 +416,10 @@ describe('TransactionNotFoundError Type Tests', () => {
     });
 
     it('should allow exhaustive switch on response type', () => {
-      const response: Sep24TransactionResponse = {
+      const response = {
         type: 'not_found',
         error: 'Transaction not found',
-      };
+      } as Sep24TransactionResponse;
 
       let result: string;
       switch (response.type) {
