@@ -1,5 +1,5 @@
-import type { AnchorKitConfig, Asset, NetworkConfig } from '../types/config.ts';
-import { ConfigurationError } from './errors.ts';
+import type { AnchorKitConfig, Asset, NetworkConfig } from '@/types/config.ts';
+import { ConfigurationError } from '@/core/errors.ts';
 
 /**
  * AnchorConfig
