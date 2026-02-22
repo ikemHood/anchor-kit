@@ -46,3 +46,15 @@ export class TransactionStateError extends AnchorKitError {
     this.attemptedStatus = attemptedStatus;
   }
 }
+
+export class RailError extends AnchorKitError {
+  public readonly statusCode = 500;
+  public readonly errorCode = 'RAIL_ERROR';
+  public railName?: string;
+
+  constructor(message: string, railName?: string, context?: Record<string, unknown>) {
+    const meta = { ...context, railName } as Record<string, unknown>;
+    super(message, meta);
+    this.railName = railName;
+  }
+}
