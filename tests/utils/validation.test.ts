@@ -55,6 +55,20 @@ describe('ValidationUtils', () => {
       expect(ValidationUtils.sanitizeInput(input)).toBe('Bold Text');
     });
 
+    test('should handle robust XSS vectors', () => {
+      const vectors = [
+        '<img src=x onerror=alert(1)>',
+        '<svg/onload=alert(1)>',
+        '<details open ontoggle=alert(1)>',
+        '<a href="javascript:alert(1)">Click me</a>',
+        '<video><source onerror="alert(1)">',
+      ];
+      for (const vector of vectors) {
+        expect(ValidationUtils.sanitizeInput(vector)).not.toContain('alert(1)');
+        expect(ValidationUtils.sanitizeInput(vector)).not.toContain('<script');
+      }
+    });
+
     test('should trim whitespace', () => {
       const input = '   content   ';
       expect(ValidationUtils.sanitizeInput(input)).toBe('content');
@@ -62,6 +76,23 @@ describe('ValidationUtils', () => {
 
     test('should handle empty input', () => {
       expect(ValidationUtils.sanitizeInput('')).toBe('');
+    });
+  });
+
+  describe('isDecimal', () => {
+    test('should return true for valid decimals', () => {
+      expect(ValidationUtils.isDecimal('100')).toBe(true);
+      expect(ValidationUtils.isDecimal('100.50')).toBe(true);
+      expect(ValidationUtils.isDecimal('-100.50')).toBe(true);
+      expect(ValidationUtils.isDecimal('0')).toBe(true);
+    });
+
+    test('should return false for invalid decimals', () => {
+      expect(ValidationUtils.isDecimal('abc')).toBe(false);
+      expect(ValidationUtils.isDecimal('1.2.3')).toBe(false);
+      expect(ValidationUtils.isDecimal('100px')).toBe(false);
+      expect(ValidationUtils.isDecimal('')).toBe(false);
+      expect(ValidationUtils.isDecimal(' ')).toBe(false);
     });
   });
 });

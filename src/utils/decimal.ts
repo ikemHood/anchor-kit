@@ -1,4 +1,5 @@
 import Big from 'big.js';
+import { ValidationUtils } from './validation';
 
 /**
  * DecimalUtils helper object
@@ -13,6 +14,9 @@ export const DecimalUtils = {
    * @returns Big instance.
    */
   fromString(value: string): Big {
+    if (!ValidationUtils.isDecimal(value)) {
+      throw new Error(`Invalid decimal string provided: ${value}`);
+    }
     return new Big(value);
   },
 
@@ -24,7 +28,7 @@ export const DecimalUtils = {
    * @returns Sum as string.
    */
   add(a: string, b: string): string {
-    return new Big(a).plus(b).toFixed();
+    return this.fromString(a).plus(this.fromString(b)).toFixed();
   },
 
   /**
@@ -35,7 +39,7 @@ export const DecimalUtils = {
    * @returns Difference as string.
    */
   subtract(a: string, b: string): string {
-    return new Big(a).minus(b).toFixed();
+    return this.fromString(a).minus(this.fromString(b)).toFixed();
   },
 
   /**
@@ -46,7 +50,7 @@ export const DecimalUtils = {
    * @returns Product as string.
    */
   multiply(a: string, b: string): string {
-    return new Big(a).times(b).toFixed();
+    return this.fromString(a).times(this.fromString(b)).toFixed();
   },
 
   /**
@@ -58,7 +62,7 @@ export const DecimalUtils = {
    * @returns Quotient as string.
    */
   divide(a: string, b: string, precision: number = 7): string {
-    return new Big(a).div(b).toFixed(precision);
+    return this.fromString(a).div(this.fromString(b)).toFixed(precision);
   },
 
   /**
@@ -70,7 +74,7 @@ export const DecimalUtils = {
    * @returns Total amount including fee as string.
    */
   applyFee(amount: string, feePercentage: number): string {
-    const bigAmount = new Big(amount);
+    const bigAmount = this.fromString(amount);
     const bigFee = new Big(feePercentage).div(100);
     return bigAmount.times(new Big(1).plus(bigFee)).toFixed();
   },

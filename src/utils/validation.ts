@@ -1,3 +1,5 @@
+import DOMPurify from 'isomorphic-dompurify';
+
 /**
  * ValidationUtils helper object
  * Provides standard validation for common fields used in SEPs.
@@ -43,17 +45,25 @@ export const ValidationUtils = {
   },
 
   /**
-   * Sanitizes input string by removing basic HTML tags and scripts.
-   * Focuses on preventing simple XSS and maintaining deterministic behavior.
+   * Sanitizes input string by removing HTML tags and scripts.
+   * Uses DOMPurify for robust XSS prevention.
    *
    * @param input The raw input string.
    * @returns Sanitized string.
    */
   sanitizeInput(input: string): string {
     if (!input) return '';
-    return input
-      .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, '')
-      .replace(/<[^>]+>/g, '')
-      .trim();
+    return DOMPurify.sanitize(input, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).trim();
+  },
+
+  /**
+   * Validates if a string is a valid decimal number.
+   *
+   * @param value The string to validate.
+   * @returns true if valid, false otherwise.
+   */
+  isDecimal(value: string): boolean {
+    if (!value) return false;
+    return /^-?\d+(\.\d+)?$/.test(value);
   },
 };

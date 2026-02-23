@@ -54,4 +54,15 @@ describe('DecimalUtils', () => {
       expect(DecimalUtils.multiply('0.0000001', '0.0000001')).toBe('0.00000000000001');
     });
   });
+
+  describe('error handling', () => {
+    test('should throw error for invalid decimal strings', () => {
+      expect(() => DecimalUtils.fromString('abc')).toThrow('Invalid decimal string provided: abc');
+      expect(() => DecimalUtils.add('10.5', 'invalid')).toThrow();
+      expect(() => DecimalUtils.subtract('invalid', '10.5')).toThrow();
+      expect(() => DecimalUtils.multiply('10.5', 'invalid')).toThrow();
+      expect(() => DecimalUtils.divide('10.5', 'invalid')).toThrow();
+      expect(() => DecimalUtils.applyFee('invalid', 2.5)).toThrow();
+    });
+  });
 });
