@@ -1,5 +1,12 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { TransactionStateError, RailError } from '@/core/errors.ts';
+import {
+  TransactionStateError,
+  RailError,
+  ConfigError,
+  ConfigurationError,
+  ValidationError,
+  SepProtocolError,
+} from '@/core/errors.ts';
 import { AnchorKitError } from '../../src/core/errors';
 
 // Test subclass since AnchorKitError is abstract
@@ -63,6 +70,49 @@ describe('AnchorKitError', () => {
         message: 'Dev error',
         context: { debugInfo: 'stuff' },
       });
+    });
+  });
+});
+
+describe('ConfigError', () => {
+  it('maps statusCode and errorCode', () => {
+    const err = new ConfigError('missing secret');
+    expect(err.statusCode).toBe(500);
+    expect(err.errorCode).toBe('INVALID_CONFIG');
+  });
+
+  it('supports backward compatibility via ConfigurationError alias', () => {
+    const err = new ConfigurationError('legacy error');
+    expect(err).toBeInstanceOf(ConfigError);
+    expect(err.statusCode).toBe(500);
+  });
+});
+
+describe('ValidationError', () => {
+  it('maps statusCode and errorCode', () => {
+    const err = new ValidationError('invalid parameter');
+    expect(err.statusCode).toBe(400);
+    expect(err.errorCode).toBe('INVALID_REQUEST');
+  });
+});
+
+describe('SepProtocolError', () => {
+  it('maps statusCode and errorCode correctly', () => {
+    const err = new SepProtocolError('customer not found', 'customer_info_needed');
+    expect(err.statusCode).toBe(400);
+    expect(err.errorCode).toBe('customer_info_needed');
+  });
+
+  it('preserves optional sepErrorType and context', () => {
+    const err = new SepProtocolError('bad request', 'bad_request', 'invalid_field', {
+      field: 'amount',
+    });
+
+    expect(err.sepErrorType).toBe('invalid_field');
+    expect(err.context).toEqual({
+      errorCode: 'bad_request',
+      sepErrorType: 'invalid_field',
+      field: 'amount',
     });
   });
 });

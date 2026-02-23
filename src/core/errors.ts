@@ -1,3 +1,5 @@
+import { SepErrorCode } from '../types/foundation.ts';
+
 export abstract class AnchorKitError extends Error {
   public abstract readonly statusCode: number;
   public abstract readonly errorCode: string;
@@ -19,12 +21,54 @@ export abstract class AnchorKitError extends Error {
   }
 }
 
-export class ConfigurationError extends AnchorKitError {
+/**
+ * Error raised when the anchor's internal configuration is invalid or incomplete.
+ */
+export class ConfigError extends AnchorKitError {
   public readonly statusCode = 500;
   public readonly errorCode = 'INVALID_CONFIG';
 
   constructor(message: string, context?: Record<string, unknown>) {
     super(message, context);
+  }
+}
+
+/**
+ * Alias for ConfigError to maintain backward compatibility.
+ * @deprecated Use ConfigError instead.
+ */
+export const ConfigurationError = ConfigError;
+
+/**
+ * Error raised when a request fails validation (e.g. invalid parameters).
+ */
+export class ValidationError extends AnchorKitError {
+  public readonly statusCode = 400;
+  public readonly errorCode = 'INVALID_REQUEST';
+
+  constructor(message: string, context?: Record<string, unknown>) {
+    super(message, context);
+  }
+}
+
+/**
+ * Error representing a standard SEP protocol error.
+ */
+export class SepProtocolError extends AnchorKitError {
+  public readonly statusCode = 400;
+  public readonly errorCode: SepErrorCode;
+  public sepErrorType?: string;
+
+  constructor(
+    message: string,
+    errorCode: SepErrorCode,
+    sepErrorType?: string,
+    context?: Record<string, unknown>,
+  ) {
+    const meta = { ...context, errorCode, sepErrorType } as Record<string, unknown>;
+    super(message, meta);
+    this.errorCode = errorCode;
+    this.sepErrorType = sepErrorType;
   }
 }
 
