@@ -7,4 +7,4 @@
 
 export * from './types';
 export * from './core/errors';
-export * from './utils';
+export * as utils from './utils';
