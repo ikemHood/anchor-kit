@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ESNext",
-      "dom"
-    ],
+    "lib": ["ESNext", "dom"],
     "module": "esnext",
     "target": "esnext",
     "moduleResolution": "bundler",
@@ -25,18 +22,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "tests/**/*",
-    "setup-repo.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "tests/**/*", "setup-repo.ts"],
+  "exclude": ["node_modules", "dist"]
 }

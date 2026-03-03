@@ -18,41 +18,96 @@ Designed for **Bun** and **TypeScript**, Anchor-Kit aims to make Stellar Anchors
 - 🛡 **Type-Safe**: Built with TypeScript for a robust developer experience.
 - ⚡ **Bun Optimized**: Fast runtime performance.
 
-## Installation
+## MVP Status
+
+This repository now ships a usable MVP with:
+
+- Express-style router mounting via `anchor.getExpressRouter()`
+- SEP-10 minimal challenge/token flow
+- SEP-24 minimal interactive deposit flow
+- Webhook endpoint with signature verification + callback hook
+- Real SQL persistence (SQLite implemented for local/dev tests, PostgreSQL path supported)
+- In-process queue + watcher lifecycle (`startBackgroundJobs` / `stopBackgroundJobs`)
+
+The SDK does not own `listen()` and does not bind network ports.
+
+## Install
 
 ```bash
 bun add anchor-kit
 ```
 
-## Quick Start (Dream API)
+## Quick Start
 
-```typescript
+```ts
+import express from 'express';
 import { createAnchor } from 'anchor-kit';
-import { sep24 } from 'anchor-kit/plugins/sep24';
-import { postgresAdapter } from 'anchor-kit/adapters/postgres';
+
+const app = express();
+app.use(express.json());
 
 const anchor = createAnchor({
-  network: 'testnet',
-  database: postgresAdapter({
-    url: process.env.DATABASE_URL,
-  }),
-  secrets: {
-    sep10SigningKey: process.env.SEP10_SIGNING_KEY,
-    distributionAccountSecret: process.env.DISTRIBUTION_SECRET,
+  network: { network: 'testnet' },
+  server: { interactiveDomain: 'https://anchor.example.com' },
+  security: {
+    sep10SigningKey: process.env.SEP10_SIGNING_KEY!,
+    interactiveJwtSecret: process.env.INTERACTIVE_JWT_SECRET!,
+    distributionAccountSecret: process.env.DISTRIBUTION_ACCOUNT_SECRET!,
+    webhookSecret: process.env.WEBHOOK_SECRET,
+    verifyWebhookSignatures: true,
   },
-  plugins: [
-    sep24({
-      assetCode: 'USDC',
-      issuer: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
-    }),
-  ],
+  assets: {
+    assets: [
+      {
+        code: 'USDC',
+        issuer: process.env.USDC_ISSUER!,
+        deposits_enabled: true,
+      },
+    ],
+  },
+  framework: {
+    database: {
+      provider: 'postgres',
+      url: process.env.DATABASE_URL!,
+    },
+    queue: {
+      backend: 'memory',
+      concurrency: 5,
+    },
+    watchers: {
+      enabled: true,
+      pollIntervalMs: 15000,
+      transactionTimeoutMs: 300000,
+    },
+  },
+  webhooks: {
+    onEvent: async (event, ctx) => {
+      console.log('webhook event', event.eventId, ctx.receivedAt);
+    },
+  },
 });
 
-anchor.listen(3000);
-console.log('⚓ Anchor service running on port 3000');
+await anchor.init();
+await anchor.startBackgroundJobs();
+
+app.use('/anchor', anchor.getExpressRouter());
+
+app.listen(3000);
 ```
 
-## Documentation
+## Endpoints
+
+Mounted under your chosen base path (for example `/anchor`):
+
+- `GET /health`
+- `GET /info`
+- `GET /auth/challenge`
+- `POST /auth/token`
+- `POST /transactions/deposit/interactive` (Bearer auth)
+- `GET /transactions/:id` (Bearer auth)
+- `POST /webhooks/events`
+
+## Docs
 
 - [Architecture Overview](./ARCHITECTURE.md)
 - [Contributing Guide](./CONTRIBUTING.md)
@@ -64,4 +119,4 @@ We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md)
 
 ## License
 
-MIT © [0xNgoo](https://github.com/0xNgoo)
+MIT

@@ -1,0 +1,287 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { Readable } from 'node:stream';
+import { unlinkSync } from 'node:fs';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createHmac } from 'node:crypto';
+import { createAnchor, type AnchorInstance } from '@/index.ts';
+import { makeSqliteDbUrlForTests } from '@/core/factory.ts';
+
+interface TestResponse {
+  status: number;
+  body: Record<string, unknown>;
+}
+
+interface TestRequestOptions {
+  method?: string;
+  path: string;
+  headers?: Record<string, string>;
+  body?: Record<string, unknown>;
+}
+
+function createMountedInvoker(anchor: AnchorInstance) {
+  const middleware = anchor.getExpressRouter();
+
+  return async (options: TestRequestOptions): Promise<TestResponse> => {
+    const serializedBody = options.body ? JSON.stringify(options.body) : '';
+
+    const req = Readable.from(serializedBody ? [serializedBody] : []) as IncomingMessage & {
+      method: string;
+      url: string;
+      headers: Record<string, string>;
+      body?: Record<string, unknown>;
+    };
+
+    req.method = options.method ?? 'GET';
+    req.url = `/anchor${options.path}`;
+    req.headers = Object.fromEntries(
+      Object.entries(options.headers ?? {}).map(([key, value]) => [key.toLowerCase(), value]),
+    );
+
+    const responseHeaders: Record<string, string> = {};
+
+    const response = await new Promise<TestResponse>((resolve) => {
+      let statusCode = 200;
+      let headersSent = false;
+      const res = {
+        get headersSent(): boolean {
+          return headersSent;
+        },
+        set headersSent(value: boolean) {
+          headersSent = value;
+        },
+        get statusCode(): number {
+          return statusCode;
+        },
+        set statusCode(value: number) {
+          statusCode = value;
+        },
+        setHeader(name: string, value: string): void {
+          responseHeaders[name.toLowerCase()] = value;
+          headersSent = true;
+        },
+        end(payload?: string): void {
+          const contentType = responseHeaders['content-type'] ?? '';
+          const bodyText = typeof payload === 'string' ? payload : '';
+          const body =
+            contentType.includes('application/json') && bodyText
+              ? (JSON.parse(bodyText) as Record<string, unknown>)
+              : {};
+          resolve({
+            status: statusCode,
+            body,
+          });
+        },
+      } as unknown as ServerResponse;
+
+      const rawUrl = req.url;
+      if (!rawUrl.startsWith('/anchor')) {
+        res.statusCode = 404;
+        res.end(JSON.stringify({ error: 'not_found' }));
+        return;
+      }
+
+      req.url = rawUrl.slice('/anchor'.length) || '/';
+      middleware(req, res, () => {
+        res.statusCode = 404;
+        res.setHeader('content-type', 'application/json');
+        res.end(JSON.stringify({ error: 'not_found' }));
+      });
+    });
+
+    return response;
+  };
+}
+
+describe('MVP Express-mounted integration', () => {
+  const dbUrl = makeSqliteDbUrlForTests();
+  const dbPath = dbUrl.startsWith('file:') ? dbUrl.slice('file:'.length) : dbUrl;
+
+  let webhookCallbackCount = 0;
+  let anchor: AnchorInstance;
+  let invoke: (options: TestRequestOptions) => Promise<TestResponse>;
+  let accessToken = '';
+  let transactionId = '';
+
+  beforeAll(async () => {
+    anchor = createAnchor({
+      network: { network: 'testnet' },
+      server: { interactiveDomain: 'https://anchor.example.com' },
+      security: {
+        sep10SigningKey: 'sep10-test-signing-key',
+        interactiveJwtSecret: 'jwt-test-secret',
+        distributionAccountSecret: 'distribution-test-secret',
+        webhookSecret: 'webhook-test-secret',
+        verifyWebhookSignatures: true,
+        challengeExpirationSeconds: 300,
+      },
+      assets: {
+        assets: [
+          {
+            code: 'USDC',
+            issuer: 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
+            deposits_enabled: true,
+          },
+        ],
+      },
+      framework: {
+        database: {
+          provider: 'sqlite',
+          url: dbUrl,
+        },
+        queue: {
+          backend: 'memory',
+          concurrency: 2,
+        },
+        watchers: {
+          enabled: true,
+          pollIntervalMs: 50,
+          transactionTimeoutMs: 50,
+        },
+      },
+      webhooks: {
+        onEvent: async () => {
+          webhookCallbackCount += 1;
+        },
+      },
+    });
+
+    await anchor.init();
+    await anchor.startBackgroundJobs();
+    invoke = createMountedInvoker(anchor);
+  });
+
+  afterAll(async () => {
+    await anchor.stopBackgroundJobs();
+    await anchor.shutdown();
+
+    try {
+      unlinkSync(dbPath);
+    } catch {
+      // ignore cleanup errors in CI
+    }
+  });
+
+  it('1) app mounts router and /health works', async () => {
+    const response = await invoke({ path: '/health' });
+    expect(response.status).toBe(200);
+    expect(response.body.status).toBe('ok');
+  });
+
+  it('2) /info returns configured assets', async () => {
+    const response = await invoke({ path: '/info' });
+    expect(response.status).toBe(200);
+    const assets = response.body.assets;
+    expect(Array.isArray(assets)).toBe(true);
+    expect((assets as Array<Record<string, unknown>>)[0]?.code).toBe('USDC');
+  });
+
+  it('3) challenge -> token happy path', async () => {
+    const account = 'GCFXACTUALACCOUNTTEST123';
+    const challengeResponse = await invoke({ path: `/auth/challenge?account=${account}` });
+    expect(challengeResponse.status).toBe(200);
+    const challenge = String(challengeResponse.body.challenge ?? '');
+    expect(challenge.length).toBeGreaterThan(0);
+
+    const tokenResponse = await invoke({
+      method: 'POST',
+      path: '/auth/token',
+      headers: { 'content-type': 'application/json' },
+      body: { account, challenge },
+    });
+
+    expect(tokenResponse.status).toBe(200);
+    accessToken = String(tokenResponse.body.token ?? '');
+    expect(accessToken.length).toBeGreaterThan(0);
+  });
+
+  it('4) unauthorized deposit interactive rejected', async () => {
+    const response = await invoke({
+      method: 'POST',
+      path: '/transactions/deposit/interactive',
+      headers: { 'content-type': 'application/json' },
+      body: { asset_code: 'USDC', amount: '10' },
+    });
+
+    expect(response.status).toBe(401);
+  });
+
+  it('5) authorized deposit interactive creates persistent transaction', async () => {
+    const response = await invoke({
+      method: 'POST',
+      path: '/transactions/deposit/interactive',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${accessToken}`,
+        'idempotency-key': 'deposit-1',
+      },
+      body: { asset_code: 'USDC', amount: '25.5' },
+    });
+
+    expect(response.status).toBe(201);
+    transactionId = String(response.body.id ?? '');
+    expect(transactionId.length).toBeGreaterThan(0);
+    expect(response.body.status).toBe('pending_user_transfer_start');
+  });
+
+  it('6) transaction lookup fetches persisted data', async () => {
+    const response = await invoke({
+      method: 'GET',
+      path: `/transactions/${transactionId}`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(transactionId);
+    expect(response.body.asset_code).toBe('USDC');
+  });
+
+  it('7) webhook route stores event and invokes configured callback', async () => {
+    const payload = {
+      id: 'evt_1',
+      type: 'deposit.completed',
+      transaction_id: transactionId,
+    };
+
+    const signature = createHmac('sha256', 'webhook-test-secret')
+      .update(JSON.stringify(payload))
+      .digest('hex');
+
+    const firstResponse = await invoke({
+      method: 'POST',
+      path: '/webhooks/events',
+      headers: {
+        'content-type': 'application/json',
+        'x-webhook-provider': 'generic',
+        'x-anchor-signature': signature,
+      },
+      body: payload,
+    });
+
+    expect(firstResponse.status).toBe(200);
+    expect(firstResponse.body.duplicate).toBe(false);
+    expect(webhookCallbackCount).toBe(1);
+
+    const duplicateResponse = await invoke({
+      method: 'POST',
+      path: '/webhooks/events',
+      headers: {
+        'content-type': 'application/json',
+        'x-webhook-provider': 'generic',
+        'x-anchor-signature': signature,
+      },
+      body: payload,
+    });
+
+    expect(duplicateResponse.status).toBe(200);
+    expect(duplicateResponse.body.duplicate).toBe(true);
+    expect(webhookCallbackCount).toBe(1);
+  });
+
+  it('8) queue worker/watcher processes at least one watch task', async () => {
+    await new Promise((resolve) => setTimeout(resolve, 125));
+    const processed = await anchor.getProcessedWatcherTaskCount();
+    expect(processed).toBeGreaterThan(0);
+  });
+});

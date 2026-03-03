@@ -66,7 +66,21 @@ export class AnchorConfig {
       kycRequired: input.kycRequired,
       operational,
       metadata: input.metadata,
-      framework: input.framework,
+      framework: input.framework
+        ? {
+            ...input.framework,
+            queue: {
+              backend: input.framework.queue?.backend ?? 'memory',
+              concurrency: input.framework.queue?.concurrency ?? 1,
+            },
+            watchers: {
+              enabled: input.framework.watchers?.enabled ?? true,
+              pollIntervalMs: input.framework.watchers?.pollIntervalMs ?? 15000,
+              transactionTimeoutMs: input.framework.watchers?.transactionTimeoutMs ?? 300000,
+            },
+          }
+        : undefined,
+      webhooks: input.webhooks,
     };
 
     return merged as AnchorKitConfig;
@@ -209,6 +223,22 @@ export class AnchorConfig {
     // Validate Framework Database config
     if (!framework.database || !framework.database.provider || !framework.database.url) {
       throw new ConfigError('Missing required database configuration in framework.database');
+    }
+
+    if (
+      framework.queue &&
+      framework.queue.concurrency !== undefined &&
+      framework.queue.concurrency < 1
+    ) {
+      throw new ConfigError('framework.queue.concurrency must be >= 1');
+    }
+
+    if (
+      framework.watchers &&
+      framework.watchers.pollIntervalMs !== undefined &&
+      framework.watchers.pollIntervalMs < 10
+    ) {
+      throw new ConfigError('framework.watchers.pollIntervalMs must be >= 10');
     }
 
     // Validate database URL loosely (could be a connection string or file path)
