@@ -102,7 +102,7 @@ Mounted under your chosen base path (for example `/anchor`):
 - `GET /health`
 - `GET /info`
 - `GET /auth/challenge`
-- `POST /auth/token`
+- `POST /auth/token` (expects wallet-signed SEP-10 challenge XDR)
 - `POST /transactions/deposit/interactive` (Bearer auth)
 - `GET /transactions/:id` (Bearer auth)
 - `POST /webhooks/events`

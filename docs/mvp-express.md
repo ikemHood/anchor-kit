@@ -171,8 +171,10 @@ Token:
 ```bash
 TOKEN=$(curl -s -X POST "$BASE/auth/token" \
   -H 'content-type: application/json' \
-  -d "{\"account\":\"$ACCOUNT\",\"challenge\":\"$CHALLENGE\"}" | jq -r .token)
+  -d "{\"account\":\"$ACCOUNT\",\"challenge\":\"$SIGNED_CHALLENGE_XDR\"}" | jq -r .token)
 ```
+
+`$SIGNED_CHALLENGE_XDR` must be the SEP-10 challenge transaction signed by the wallet/account owner.
 
 Create interactive deposit:
 
