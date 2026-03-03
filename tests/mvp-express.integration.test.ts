@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import { unlinkSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createHmac } from 'node:crypto';
+import { Keypair, Transaction } from '@stellar/stellar-sdk';
 import { createAnchor, type AnchorInstance } from '@/index.ts';
 import { makeSqliteDbUrlForTests } from '@/core/factory.ts';
 
@@ -93,6 +94,8 @@ function createMountedInvoker(anchor: AnchorInstance) {
 }
 
 describe('MVP Express-mounted integration', () => {
+  const sep10ServerKeypair = Keypair.random();
+  const clientKeypair = Keypair.random();
   const dbUrl = makeSqliteDbUrlForTests();
   const dbPath = dbUrl.startsWith('file:') ? dbUrl.slice('file:'.length) : dbUrl;
 
@@ -107,7 +110,7 @@ describe('MVP Express-mounted integration', () => {
       network: { network: 'testnet' },
       server: { interactiveDomain: 'https://anchor.example.com' },
       security: {
-        sep10SigningKey: 'sep10-test-signing-key',
+        sep10SigningKey: sep10ServerKeypair.secret(),
         interactiveJwtSecret: 'jwt-test-secret',
         distributionAccountSecret: 'distribution-test-secret',
         webhookSecret: 'webhook-test-secret',
@@ -127,6 +130,13 @@ describe('MVP Express-mounted integration', () => {
         database: {
           provider: 'sqlite',
           url: dbUrl,
+        },
+        rateLimit: {
+          windowMs: 60000,
+          authChallengeMax: 2,
+          authTokenMax: 5,
+          webhookMax: 20,
+          depositMax: 20,
         },
         queue: {
           backend: 'memory',
@@ -176,17 +186,24 @@ describe('MVP Express-mounted integration', () => {
   });
 
   it('3) challenge -> token happy path', async () => {
-    const account = 'GCFXACTUALACCOUNTTEST123';
-    const challengeResponse = await invoke({ path: `/auth/challenge?account=${account}` });
+    const account = clientKeypair.publicKey();
+    const challengeResponse = await invoke({
+      path: `/auth/challenge?account=${account}`,
+      headers: { 'x-forwarded-for': '10.0.0.1' },
+    });
     expect(challengeResponse.status).toBe(200);
-    const challenge = String(challengeResponse.body.challenge ?? '');
-    expect(challenge.length).toBeGreaterThan(0);
+    const challengeXdr = String(challengeResponse.body.challenge ?? '');
+    expect(challengeXdr.length).toBeGreaterThan(0);
+    const networkPassphrase = String(challengeResponse.body.network_passphrase ?? '');
+    const challengeTx = new Transaction(challengeXdr, networkPassphrase);
+    challengeTx.sign(clientKeypair);
+    const signedChallengeXdr = challengeTx.toXDR();
 
     const tokenResponse = await invoke({
       method: 'POST',
       path: '/auth/token',
-      headers: { 'content-type': 'application/json' },
-      body: { account, challenge },
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '10.0.0.1' },
+      body: { account, challenge: signedChallengeXdr },
     });
 
     expect(tokenResponse.status).toBe(200);
@@ -283,5 +300,24 @@ describe('MVP Express-mounted integration', () => {
     await new Promise((resolve) => setTimeout(resolve, 125));
     const processed = await anchor.getProcessedWatcherTaskCount();
     expect(processed).toBeGreaterThan(0);
+  });
+
+  it('9) unsigned challenge is rejected', async () => {
+    const account = clientKeypair.publicKey();
+    const challengeResponse = await invoke({
+      path: `/auth/challenge?account=${account}`,
+      headers: { 'x-forwarded-for': '10.0.0.2' },
+    });
+    const challengeXdr = String(challengeResponse.body.challenge ?? '');
+
+    const tokenResponse = await invoke({
+      method: 'POST',
+      path: '/auth/token',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '10.0.0.2' },
+      body: { account, challenge: challengeXdr },
+    });
+
+    expect(tokenResponse.status).toBe(401);
+    expect(tokenResponse.body.error).toBe('invalid_challenge');
   });
 });
