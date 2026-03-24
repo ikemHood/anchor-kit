@@ -411,7 +411,7 @@ export class AnchorExpressRouter {
         { expiresIn: 3600 },
       );
 
-      sendJson(res, 200, { token, expires_in: 3600 });
+      sendJson(res, 200, { token, expires_in: 3600, token_type: 'Bearer' });
       return;
     }
 
@@ -627,7 +627,8 @@ export class AnchorExpressRouter {
         this.config.get('security').interactiveJwtSecret,
       ) as jwt.JwtPayload;
       const account = typeof decoded.sub === 'string' ? decoded.sub : null;
-      if (!account) {
+      const scope = typeof decoded.scope === 'string' ? decoded.scope : null;
+      if (!account || scope !== 'anchor_api') {
         return null;
       }
 

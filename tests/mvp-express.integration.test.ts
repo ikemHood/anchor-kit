@@ -209,6 +209,7 @@ describe('MVP Express-mounted integration', () => {
     expect(tokenResponse.status).toBe(200);
     accessToken = String(tokenResponse.body.token ?? '');
     expect(accessToken.length).toBeGreaterThan(0);
+    expect(tokenResponse.body.token_type).toBe('Bearer');
   });
 
   it('4) unauthorized deposit interactive rejected', async () => {
@@ -319,5 +320,32 @@ describe('MVP Express-mounted integration', () => {
 
     expect(tokenResponse.status).toBe(401);
     expect(tokenResponse.body.error).toBe('invalid_challenge');
+  });
+
+  it('10) token with missing/incorrect scope is rejected', async () => {
+    // Manually sign a token with a different scope to test the server's validation
+    const jwt = (await import('jsonwebtoken')).default;
+    const badToken = jwt.sign(
+      {
+        sub: clientKeypair.publicKey(),
+        scope: 'wrong_api',
+        typ: 'access_token',
+      },
+      'jwt-test-secret',
+      { expiresIn: 3600 },
+    );
+
+    const response = await invoke({
+      method: 'POST',
+      path: '/transactions/deposit/interactive',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${badToken}`,
+      },
+      body: { asset_code: 'USDC', amount: '10' },
+    });
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toBe('unauthorized');
   });
 });
