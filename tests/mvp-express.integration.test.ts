@@ -241,6 +241,38 @@ describe('MVP Express-mounted integration', () => {
     expect(response.body.status).toBe('pending_user_transfer_start');
   });
 
+  it('5b) deposit with SAME idempotency-key but DIFFERENT body is rejected', async () => {
+    const response = await invoke({
+      method: 'POST',
+      path: '/transactions/deposit/interactive',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${accessToken}`,
+        'idempotency-key': 'deposit-1', // reused key from test 5
+      },
+      body: { asset_code: 'USDC', amount: '100.0' }, // different amount
+    });
+
+    expect(response.status).toBe(409);
+    expect(response.body.error).toBe('idempotency_conflict');
+  });
+
+  it('5c) deposit with SAME idempotency-key and SAME body returns original response', async () => {
+    const response = await invoke({
+      method: 'POST',
+      path: '/transactions/deposit/interactive',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${accessToken}`,
+        'idempotency-key': 'deposit-1',
+      },
+      body: { asset_code: 'USDC', amount: '25.5' },
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.id).toBe(transactionId);
+  });
+
   it('6) transaction lookup fetches persisted data', async () => {
     const response = await invoke({
       method: 'GET',
